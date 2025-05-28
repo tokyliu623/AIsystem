@@ -382,7 +382,7 @@ def process_comment_file(filename, api_key, session_id):
     try:
         # 读取Excel文件
         update_task_status('comment', session_id, message='读取文件中...')
-        df = pd.read_excel(filename, engine='openpyxl')# 直接指定使用openpyxl引擎
+        df = pd.read_excel(filename)
         
         # 检查必要的列
         if '评论内容' not in df.columns:
@@ -486,8 +486,7 @@ def process_cover_file(filename, api_key, session_id):
     try:
         # 读取Excel文件
         update_task_status('cover', session_id, message='读取文件中...')
-        df = pd.read_excel(filename, engine='openpyxl')# 直接指定使用openpyxl引擎
-        
+        df = pd.read_excel(filename)
         
         # 检查必要的列
         if '封面链接' not in df.columns:

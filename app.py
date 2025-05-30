@@ -99,12 +99,14 @@ def update_statistics(audit_type, session_id, result, tags):
         else:
             task_status[audit_type][session_id]['statistics']['results'][result] = 1
         
-        # 更新标签统计
-        for tag in tags:
-            if tag in task_status[audit_type][session_id]['statistics']['tags']:
-                task_status[audit_type][session_id]['statistics']['tags'][tag] += 1
+        # 更新标签统计 - 修改为按整体标签字符串统计，不再拆分
+        if tags and len(tags) > 0:
+            # 将标签列表合并为一个字符串，作为一个整体标签
+            tag_str = ', '.join(tags)
+            if tag_str in task_status[audit_type][session_id]['statistics']['tags']:
+                task_status[audit_type][session_id]['statistics']['tags'][tag_str] += 1
             else:
-                task_status[audit_type][session_id]['statistics']['tags'][tag] = 1
+                task_status[audit_type][session_id]['statistics']['tags'][tag_str] = 1
 
 def get_upload_path(audit_type, session_id):
     """获取上传文件路径 - 使用传入的session_id而非Flask session"""
@@ -487,7 +489,6 @@ def process_cover_file(filename, api_key, session_id):
         # 读取Excel文件
         update_task_status('cover', session_id, message='读取文件中...')
         df = pd.read_excel(filename, engine='openpyxl')# 直接指定使用openpyxl引擎
-        
         
         # 检查必要的列
         if '封面链接' not in df.columns:

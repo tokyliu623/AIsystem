@@ -585,7 +585,7 @@ def process_cover_file(filename, api_key, session_id):
         
     except Exception as e:
         logger.error(f"封面处理错误: {str(e)}")
-        update_task_status('cover', session_id, status='error', message=f'处理出错: {str(e)}')
+        update_task_status('cover', session_id, status='error', message=f'处理出错: {str(e)}') 
         
 def process_comment(comment, api_key):
     """处理单条评论 - 专注提取标准格式结果"""
@@ -633,34 +633,63 @@ def process_comment(comment, api_key):
             result = "处理失败"
             tags = []
             
-            # 使用正则表达式直接提取标准格式结果
+            # 使用正则表达式提取结果
             import re
             
-            # 匹配标准格式的结果行
-            result_pattern = r'（1）审核结果\s*[:：]\s*(\S+)'
-            tag_pattern = r'（2）低质标签\s*[:：]\s*(\S+)'
+            # 多级解析策略
+            # 1. 尝试匹配标准格式
+            standard_pattern = r'（1）审核结果\s*[:：]\s*(\S+)[\s\S]*?（2）低质标签\s*[:：]\s*([^（]+)'
+            standard_match = re.search(standard_pattern, assistant_message)
             
-            # 搜索结果
-            result_match = re.search(result_pattern, assistant_message)
-            tag_match = re.search(tag_pattern, assistant_message)
+            # 2. 尝试匹配简化格式
+            simple_pattern = r'审核结果\s*[:：]\s*(\S+)[\s\S]*?低质标签\s*[:：]\s*([^（]+)'
+            simple_match = re.search(simple_pattern, assistant_message)
             
-            # 提取结果
-            if result_match:
-                result = result_match.group(1).strip()
+            # 3. 尝试提取关键信息
+            keyword_pattern = r'(正常|低质)[\s\S]*?标签[:：]\s*([^，。；\n]+)'
+            keyword_match = re.search(keyword_pattern, assistant_message)
             
-            # 提取标签
-            if tag_match:
-                tag_str = tag_match.group(1).strip()
-                # 清理标签字符串中的无关符号
-                tag_str = tag_str.replace('，', ',').replace('、', ',').replace('；', ',').replace(';', ',')
-                tag_str = tag_str.replace('/', '').strip()
+            # 优先使用标准格式匹配
+            if standard_match:
+                result = standard_match.group(1).strip()
+                tag_str = standard_match.group(2).strip()
+            # 其次使用简化格式
+            elif simple_match:
+                result = simple_match.group(1).strip()
+                tag_str = simple_match.group(2).strip()
+            # 最后尝试关键词提取
+            elif keyword_match:
+                result = keyword_match.group(1).strip()
+                tag_str = keyword_match.group(2).strip()
+            else:
+                # 终极备选方案：直接搜索关键词
+                if "正常" in assistant_message:
+                    result = "正常"
+                    tag_str = ""
+                elif "低质" in assistant_message or "违规" in assistant_message:
+                    result = "低质"
+                    # 尝试提取标签关键词
+                    tag_match = re.search(r'标签[:：]\s*([^，。；\n]+)', assistant_message)
+                    tag_str = tag_match.group(1).strip() if tag_match else ""
+                else:
+                    raise ValueError("无法解析API返回结果")
+            
+            # 清理标签字符串
+            tag_str = tag_str.replace('，', ',').replace('、', ',').replace('；', ',')
+            tag_str = tag_str.replace('；', ',').replace(';', ',').replace('/', '')
+            tag_str = re.sub(r'[^\w\s,，]', '', tag_str).strip()
+            
+            # 分割标签
+            if tag_str:
+                tags = [tag.strip() for tag in tag_str.split(',') if tag.strip()]
+            
+            # 验证结果有效性
+            valid_results = ["正常", "低质"]
+            if result not in valid_results:
+                raise ValueError(f"无效的审核结果: {result}")
                 
-                if tag_str:  # 只有非空时才分割标签
-                    tags = [tag.strip() for tag in tag_str.split(',') if tag.strip()]
-            
-            # 特殊处理：如果标签为"/"或空，则结果应为"正常"
-            if result == "正常" or (len(tags) == 1 and tags[0] in ['/', '无', '无标签']):
-                result = '正常'
+            # 特殊处理：如果结果为正常，清空标签
+            if result == "正常":
                 tags = []
             
             logger.info(f"评论审核解析结果: {result}, 标签: {tags}")
@@ -675,7 +704,7 @@ def process_comment(comment, api_key):
             
             time.sleep(2)
     
-    return '处理失败', []
+    return '处理失败', []     
     
 def process_cover(cover_url, api_key, index, session_id):
     """处理单条封面链接 - 适配新的API接口"""

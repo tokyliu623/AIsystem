@@ -4,9 +4,16 @@ AI智能内容巡检系统 - 修复版
 支持评论审核和封面审核功能
 
 主应用模块，处理Web请求和任务管理
+
+修复内容：
+1. 修复process_comment函数的API结果解析问题
+2. 支持多种API返回格式（带编号和不带编号）
+3. 过滤think标签内容，只解析实际结果
+4. 增加备用解析策略和错误处理机制
 """
 
 import os
+import re
 import time
 import uuid
 import json
@@ -99,14 +106,12 @@ def update_statistics(audit_type, session_id, result, tags):
         else:
             task_status[audit_type][session_id]['statistics']['results'][result] = 1
         
-        # 更新标签统计 - 修改为按整体标签字符串统计，不再拆分
-        if tags and len(tags) > 0:
-            # 将标签列表合并为一个字符串，作为一个整体标签
-            tag_str = ', '.join(tags)
-            if tag_str in task_status[audit_type][session_id]['statistics']['tags']:
-                task_status[audit_type][session_id]['statistics']['tags'][tag_str] += 1
+        # 更新标签统计
+        for tag in tags:
+            if tag in task_status[audit_type][session_id]['statistics']['tags']:
+                task_status[audit_type][session_id]['statistics']['tags'][tag] += 1
             else:
-                task_status[audit_type][session_id]['statistics']['tags'][tag_str] = 1
+                task_status[audit_type][session_id]['statistics']['tags'][tag] = 1
 
 def get_upload_path(audit_type, session_id):
     """获取上传文件路径 - 使用传入的session_id而非Flask session"""
@@ -490,6 +495,7 @@ def process_cover_file(filename, api_key, session_id):
         update_task_status('cover', session_id, message='读取文件中...')
         df = pd.read_excel(filename, engine='openpyxl')# 直接指定使用openpyxl引擎
         
+        
         # 检查必要的列
         if '封面链接' not in df.columns:
             update_task_status('cover', session_id, status='error', message='文件格式错误：缺少"封面链接"列')
@@ -585,13 +591,22 @@ def process_cover_file(filename, api_key, session_id):
         
     except Exception as e:
         logger.error(f"封面处理错误: {str(e)}")
-        update_task_status('cover', session_id, status='error', message=f'处理出错: {str(e)}') 
-        
+        update_task_status('cover', session_id, status='error', message=f'处理出错: {str(e)}')
+
 def process_comment(comment, api_key):
-    """处理单条评论 - 专注提取标准格式结果"""
+    """处理单条评论 - 修复版本，解决API结果解析问题
+    
+    修复内容：
+    1. 支持多种API返回格式（带编号和不带编号）
+    2. 过滤think标签内容，只解析实际结果
+    3. 增加备用解析策略
+    4. 增强错误处理和重试机制
+    """
     # 最大重试次数
     max_retries = 3
     retry_count = 0
+    # 设置超时时间（连接超时+读取超时）
+    api_timeout = (10, 3000)  # (连接超时10秒, 读取超时3000秒)
     
     while retry_count < max_retries:
         try:
@@ -610,102 +625,242 @@ def process_comment(comment, api_key):
             }
             
             logger.info(f"评论审核请求数据: {json.dumps(data)}")
-            response = requests.post(API_URL, headers=headers, json=data)
+            
+            # 发送请求，添加3000秒超时机制
+            response = requests.post(
+                API_URL, 
+                headers=headers, 
+                json=data, 
+                timeout=api_timeout
+            )
+            
             logger.info(f"评论审核响应状态: {response.status_code}")
             
+            # 处理非200状态码
             if response.status_code != 200:
                 logger.error(f"评论审核响应错误: {response.text}")
                 # 特殊处理501错误
                 if response.status_code == 501 and "conversation_id" in response.text:
                     retry_count += 1
-                    logger.info(f"评论审核重试 {retry_count}/{max_retries}")
+                    logger.warning(f"501错误触发重试 ({retry_count}/{max_retries})")
                     time.sleep(2)
                     continue
-            
-            response.raise_for_status()
+                # 其他非200状态码直接引发异常
+                response.raise_for_status()
             
             # 解析响应
             result_data = response.json()
             assistant_message = result_data.get('answer', '')
             logger.info(f"评论审核原始响应: {assistant_message}")
             
-            # 初始化默认值
-            result = "处理失败"
-            tags = []
-            
-            # 使用正则表达式提取结果
-            import re
-            
-            # 多级解析策略
-            # 1. 尝试匹配标准格式
-            standard_pattern = r'（1）审核结果\s*[:：]\s*(\S+)[\s\S]*?（2）低质标签\s*[:：]\s*([^（]+)'
-            standard_match = re.search(standard_pattern, assistant_message)
-            
-            # 2. 尝试匹配简化格式
-            simple_pattern = r'审核结果\s*[:：]\s*(\S+)[\s\S]*?低质标签\s*[:：]\s*([^（]+)'
-            simple_match = re.search(simple_pattern, assistant_message)
-            
-            # 3. 尝试提取关键信息
-            keyword_pattern = r'(正常|低质)[\s\S]*?标签[:：]\s*([^，。；\n]+)'
-            keyword_match = re.search(keyword_pattern, assistant_message)
-            
-            # 优先使用标准格式匹配
-            if standard_match:
-                result = standard_match.group(1).strip()
-                tag_str = standard_match.group(2).strip()
-            # 其次使用简化格式
-            elif simple_match:
-                result = simple_match.group(1).strip()
-                tag_str = simple_match.group(2).strip()
-            # 最后尝试关键词提取
-            elif keyword_match:
-                result = keyword_match.group(1).strip()
-                tag_str = keyword_match.group(2).strip()
-            else:
-                # 终极备选方案：直接搜索关键词
-                if "正常" in assistant_message:
-                    result = "正常"
-                    tag_str = ""
-                elif "低质" in assistant_message or "违规" in assistant_message:
-                    result = "低质"
-                    # 尝试提取标签关键词
-                    tag_match = re.search(r'标签[:：]\s*([^，。；\n]+)', assistant_message)
-                    tag_str = tag_match.group(1).strip() if tag_match else ""
-                else:
-                    raise ValueError("无法解析API返回结果")
-            
-            # 清理标签字符串
-            tag_str = tag_str.replace('，', ',').replace('、', ',').replace('；', ',')
-            tag_str = tag_str.replace('；', ',').replace(';', ',').replace('/', '')
-            tag_str = re.sub(r'[^\w\s,，]', '', tag_str).strip()
-            
-            # 分割标签
-            if tag_str:
-                tags = [tag.strip() for tag in tag_str.split(',') if tag.strip()]
-            
-            # 验证结果有效性
-            valid_results = ["正常", "低质"]
-            if result not in valid_results:
-                raise ValueError(f"无效的审核结果: {result}")
-                
-            # 特殊处理：如果结果为正常，清空标签
-            if result == "正常":
-                tags = []
+            # 解析API返回结果
+            result, tags = parse_audit_result(assistant_message)
             
             logger.info(f"评论审核解析结果: {result}, 标签: {tags}")
             return result, tags
             
-        except Exception as e:
+        except requests.exceptions.Timeout as timeout_err:
+            # 专门处理超时异常
             retry_count += 1
-            logger.error(f"评论处理API错误 (尝试 {retry_count}/{max_retries}): {str(e)}")
+            timeout_type = "连接" if "connect" in str(timeout_err).lower() else "读取"
+            logger.error(f"API请求超时 ({timeout_type}) (尝试 {retry_count}/{max_retries}): {str(timeout_err)}")
+            
+            if retry_count >= max_retries:
+                logger.critical("API请求达到最大超时重试次数")
+                return '处理失败', []
+            
+            # 指数退避策略
+            sleep_time = 2 ** retry_count
+            logger.info(f"将在 {sleep_time} 秒后重试...")
+            time.sleep(sleep_time)
+            
+        except requests.exceptions.RequestException as req_err:
+            # 处理其他网络请求异常
+            retry_count += 1
+            logger.error(f"网络请求异常 (尝试 {retry_count}/{max_retries}): {str(req_err)}")
+            
+            if retry_count >= max_retries:
+                return '处理失败', []
+            
+            time.sleep(2)
+            
+        except Exception as e:
+            # 处理其他所有异常
+            retry_count += 1
+            logger.error(f"未处理的异常 (尝试 {retry_count}/{max_retries}): {str(e)}")
             
             if retry_count >= max_retries:
                 return '处理失败', []
             
             time.sleep(2)
     
-    return '处理失败', []     
+    # 所有重试失败后的默认返回
+    return '处理失败', []
+
+
+def parse_audit_result(assistant_message):
+    """解析审核结果 - 修复版本，支持多种格式
     
+    支持的格式：
+    1. 带编号格式：（1）审核结果：正常 （2）低质标签：/
+    2. 不带编号格式：审核结果：正常 低质标签：/
+    3. 混合格式和各种变体
+    
+    Args:
+        assistant_message (str): API返回的完整消息
+        
+    Returns:
+        tuple: (审核结果, 标签列表)
+    """
+    # 初始化默认值
+    result = "处理失败"
+    tags = []
+    
+    try:
+        # 第一步：过滤think标签内容，只保留实际结果部分
+        # 移除<think>...</think>标签及其内容
+        think_pattern = r'<think>.*?</think>'
+        filtered_message = re.sub(think_pattern, '', assistant_message, flags=re.DOTALL)
+        
+        # 清理多余的空白字符
+        filtered_message = filtered_message.strip()
+        
+        logger.info(f"过滤think标签后的内容: {filtered_message}")
+        
+        # 第二步：尝试多种正则表达式模式解析结果
+        
+        # 模式1：带编号的标准格式 （1）审核结果：xxx （2）低质标签：xxx
+        pattern1_result = r'（1）\s*审核结果\s*[:：]\s*(\S+)'
+        pattern1_tag = r'（2）\s*低质标签\s*[:：]\s*(.+?)(?=\n|$)'
+        
+        # 模式2：不带编号的格式 审核结果：xxx 低质标签：xxx
+        pattern2_result = r'审核结果\s*[:：]\s*(\S+)'
+        pattern2_tag = r'低质标签\s*[:：]\s*(.+?)(?=\n|$)'
+        
+        # 模式3：简化格式，只有结果和标签值
+        pattern3_result = r'(?:审核结果|结果)\s*[:：]?\s*(正常|低质|违规)'
+        pattern3_tag = r'(?:低质标签|标签|违规标签)\s*[:：]?\s*(.+?)(?=\n|$)'
+        
+        # 尝试解析结果
+        result_patterns = [pattern1_result, pattern2_result, pattern3_result]
+        tag_patterns = [pattern1_tag, pattern2_tag, pattern3_tag]
+        
+        result_found = False
+        tag_found = False
+        
+        # 尝试每种模式
+        for i, (result_pattern, tag_pattern) in enumerate(zip(result_patterns, tag_patterns)):
+            if not result_found:
+                result_match = re.search(result_pattern, filtered_message, re.IGNORECASE)
+                if result_match:
+                    result = result_match.group(1).strip()
+                    result_found = True
+                    logger.info(f"使用模式{i+1}成功解析结果: {result}")
+            
+            if not tag_found:
+                tag_match = re.search(tag_pattern, filtered_message, re.IGNORECASE)
+                if tag_match:
+                    tag_str = tag_match.group(1).strip()
+                    tags = parse_tags(tag_str)
+                    tag_found = True
+                    logger.info(f"使用模式{i+1}成功解析标签: {tags}")
+        
+        # 第三步：备用解析策略 - 基于关键词匹配
+        if not result_found:
+            if '正常' in filtered_message and ('违规' not in filtered_message and '低质' not in filtered_message):
+                result = '正常'
+                result_found = True
+                logger.info("使用关键词匹配解析结果: 正常")
+            elif '低质' in filtered_message or '违规' in filtered_message:
+                result = '低质'
+                result_found = True
+                logger.info("使用关键词匹配解析结果: 低质")
+        
+        # 第四步：特殊处理逻辑
+        # 如果结果是正常，确保标签为空
+        if result == '正常':
+            tags = []
+        
+        # 如果标签只有"/"或"无"等，清空标签列表
+        if len(tags) == 1 and tags[0] in ['/', '无', '无标签', '']:
+            tags = []
+        
+        # 如果结果是低质但没有标签，尝试从内容中提取
+        if result == '低质' and not tags:
+            tags = extract_tags_from_content(filtered_message)
+        
+        logger.info(f"最终解析结果: 结果={result}, 标签={tags}")
+        
+    except Exception as e:
+        logger.error(f"解析审核结果时发生异常: {str(e)}")
+        result = "处理失败"
+        tags = []
+    
+    return result, tags
+
+
+def parse_tags(tag_str):
+    """解析标签字符串，返回标签列表
+    
+    Args:
+        tag_str (str): 标签字符串
+        
+    Returns:
+        list: 标签列表
+    """
+    if not tag_str or tag_str.strip() in ['/', '无', '无标签', '']:
+        return []
+    
+    # 清理标签字符串，支持多种分隔符
+    tag_str = tag_str.replace('，', ',').replace('、', ',').replace('；', ',').replace(';', ',')
+    tag_str = tag_str.replace('/', '').strip()
+    
+    if not tag_str:
+        return []
+    
+    # 分割标签
+    tags = [tag.strip() for tag in tag_str.split(',') if tag.strip()]
+    
+    # 过滤无效标签
+    valid_tags = []
+    for tag in tags:
+        if tag and tag not in ['/', '无', '无标签', '']:
+            valid_tags.append(tag)
+    
+    return valid_tags
+
+
+def extract_tags_from_content(content):
+    """从内容中提取可能的违规标签
+    
+    Args:
+        content (str): 内容文本
+        
+    Returns:
+        list: 提取的标签列表
+    """
+    # 定义可能的标签关键词
+    tag_keywords = {
+        '涉政': ['涉政', '政治', '政策'],
+        '违禁': ['违禁', '非法'],
+        '色情': ['色情', '性'],
+        '低俗': ['低俗', '低级'],
+        '广告': ['广告', '推广'],
+        '谩骂': ['谩骂', '辱骂', '歧视'],
+        '灌水': ['灌水', '无意义']
+    }
+    
+    found_tags = []
+    content_lower = content.lower()
+    
+    for tag, keywords in tag_keywords.items():
+        for keyword in keywords:
+            if keyword in content_lower:
+                found_tags.append(tag)
+                break
+    
+    return found_tags
+ 
 def process_cover(cover_url, api_key, index, session_id):
     """处理单条封面链接 - 适配新的API接口"""
     # 应用速率限制
@@ -813,4 +968,5 @@ def process_cover(cover_url, api_key, index, session_id):
             time.sleep(2)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5002, debug=True)
+    app.run(host='0.0.0.0', debug=True)
+

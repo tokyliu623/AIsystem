@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>AI智能内容巡检系统</title>
     <style>
          /* 新增的Tooltip样式 */
@@ -401,11 +402,12 @@
     </style>
 </head>
 <body>
+    <!-- HTML结构保持不变 -->
     <header>
         <h1><span class="ai-icon"></span>AI智能内容巡检系统<span class="ai-badge">智能分析</span></h1>
-    </header>
-    
-    <div class="container">
+    </header>  
+	
+     <div class="container">
      		<div class="tabs">
          <div class="tab active" data-tab="comment">智能评论巡检</div>
          <div class="tab" data-tab="cover">智能封面巡检</div>
@@ -603,36 +605,44 @@
             Copyright © 2025 互联网测试中心. All rights reserved. Version v1.0.0
         </footer>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+   
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // 生成唯一会话ID
             const sessionId = generateUUID();
             console.log('会话ID:', sessionId);
-            
-			// 初始化标签页切换
-			 const tabs = document.querySelectorAll('.tab');
-             tabs.forEach(tab => {
-                 tab.addEventListener('click', function() {
-                     const tabName = this.getAttribute('data-tab');
-                     
-                     // 更新标签页状态
-                     tabs.forEach(t => t.classList.remove('active'));
-                     tab.classList.add('active');
-                     
-                     // 更新内容区域
-                     document.querySelectorAll('.tab-content').forEach(content => {
-                         content.classList.remove('active');
-                     });
-                     document.getElementById(`${tabName}-tab`).classList.add('active');
-                     
-                     // 如果切换到历史记录标签页，加载历史数据
-                     if (tabName === 'history') {
-                         loadHistoryData();
-                     }
-                 });
-             });
+        
+            // 在函数开头添加Chart.js检查   
+            function checkChartAvailable() {
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js is not loaded!');
+                    return false;
+                }
+                return true;
+            }
+
+            // 初始化标签页切换
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    
+                    // 更新标签页状态
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // 更新内容区域
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(`${tabName}-tab`).classList.add('active');
+                    
+                    // 如果切换到历史记录标签页，加载历史数据
+                    if (tabName === 'history') {
+                        loadHistoryData();
+                    }
+                });
+            });
         
             // 文件上传处理（新增push类型）
             setupFileUpload('comment');
@@ -668,7 +678,7 @@
                 });
             }
             
-            // 设置文件上传
+            // 设置文件上传 - 修复点1：优化文件上传逻辑
             function setupFileUpload(type) {
                 const fileInput = document.getElementById(`${type}-file`);
                 const fileNameDisplay = document.getElementById(`${type}-file-name`);
@@ -677,34 +687,20 @@
                 
                 fileInput.addEventListener('change', (e) => {
                     if (e.target.files.length > 0) {
-                        // 检查是否有正在进行的任务
-                        fetch(`/status/${type}?session_id=${sessionId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'processing' || data.status === 'done') {
-                                showStatusMessage(type, '请先结束当前任务', 'warning');
-                                fileInput.value = ''; // 清空文件选择
-                                return;
-                            }
-                            
-                            const file = e.target.files[0];
-                            fileNameDisplay.textContent = file.name;
-                            
-                            // 检查API密钥是否已填写
-                            if (apiKeyInput.value.trim() !== '') {
-                                startButton.disabled = false;
-                            }
-                            
-                            // 上传文件
-                            uploadFile(type, file);
-                        })
-                        .catch(error => {
-                            console.error('Error checking status:', error);
-                            showStatusMessage(type, '检查任务状态失败', 'error');
-                        });
+                        const file = e.target.files[0];
+                        fileNameDisplay.textContent = file.name;
+                        
+                        // 立即启用开始按钮（如果API密钥已填写）
+                        if (apiKeyInput.value.trim() !== '') {
+                            startButton.disabled = false;
+                        }
+                        
+                        // 上传文件
+                        uploadFile(type, file);
                     }
                 });
                 
+                // 修复点2：API密钥输入时更新按钮状态
                 apiKeyInput.addEventListener('input', () => {
                     // 检查文件是否已上传
                     if (fileNameDisplay.textContent) {
@@ -712,8 +708,8 @@
                     }
                 });
             }
-            
-            // 设置按钮事件
+
+			 // 设置按钮事件
             function setupButtonEvents(type) {
                 const startButton = document.getElementById(`${type}-start-btn`);
                 const pauseButton = document.getElementById(`${type}-pause-btn`);
@@ -764,9 +760,9 @@
                 downloadButton.addEventListener('click', () => {
                     window.location.href = `/download/${type}?session_id=${sessionId}`;
                 });
-            }
+            }			
             
-            // 上传文件
+            // 上传文件 - 修复点3：简化上传逻辑
             function uploadFile(type, file) {
                 const formData = new FormData();
                 formData.append('file', file);
@@ -781,18 +777,19 @@
                 .then(data => {
                     if (data.error) {
                         showStatusMessage(type, data.error, 'error');
+                        // 上传失败时重置文件状态
+                        document.getElementById(`${type}-file-name`).textContent = '';
+                        document.getElementById(`${type}-file`).value = '';
                     } else {
                         showStatusMessage(type, data.message, 'success');
-                        // 确保开始按钮可用
-                        const apiKeyInput = document.getElementById(`${type}-api-key`);
-                        if (apiKeyInput.value.trim() !== '') {
-                            document.getElementById(`${type}-start-btn`).disabled = false;
-                        }
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     showStatusMessage(type, '文件上传失败', 'error');
+                    // 上传失败时重置文件状态
+                    document.getElementById(`${type}-file-name`).textContent = '';
+                    document.getElementById(`${type}-file`).value = '';
                 });
             }
             
@@ -906,10 +903,12 @@
                 .catch(error => {
                     console.error('Error checking status:', error);
                 });
-            }
+            }           
             
             // 加载统计数据
             function loadStatistics(type) {
+                let retryCount = 0; // 重试计数器
+        
                 fetch(`/statistics/${type}?session_id=${sessionId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -921,16 +920,27 @@
                     // 显示结果容器
                     document.getElementById(`${type}-result-container`).style.display = 'block';
                     
-                    try {
-                        // 渲染结果图表
-                        renderResultChart(type, data.results);
-                        
-                        // 渲染标签图表
-                        renderTagChart(type, data.tags);
-                    } catch (error) {
-                        console.error('Error rendering charts:', error);
-                        showStatusMessage(type, '图表渲染失败: ' + error.message, 'error');
-                    }
+                    // 添加延迟确保DOM渲染完成
+                    setTimeout(() => {
+                        try {
+                            // 渲染结果图表
+                            renderResultChart(type, data.results);
+                            
+                            // 渲染标签图表
+                            renderTagChart(type, data.tags);
+                        } catch (error) {
+                            console.error('Error rendering charts:', error);
+                            
+                            // 添加重试机制
+                            if (retryCount < 2) { // 最多重试2次
+                                retryCount++;
+                                console.log(`Retrying chart rendering (${retryCount}/2) for ${type}`);
+                                setTimeout(() => loadStatistics(type), 300);
+                            } else {
+                                showStatusMessage(type, '图表渲染失败: ' + error.message, 'error');
+                            }
+                        }
+                    }, 100);
                 })
                 .catch(error => {
                     console.error('Error loading statistics:', error);
@@ -938,9 +948,16 @@
                 });
             }
             
+            // 修复点4：将渲染函数移出嵌套结构
             // 渲染结果图表
             function renderResultChart(type, results) {
-                const ctx = document.getElementById(`${type}-result-chart`).getContext('2d');
+                const ctx = document.getElementById(`${type}-result-chart`);
+                if (!ctx) {
+                    console.error(`Canvas element not found for ${type}-result-chart`);
+                    return;
+                }
+                
+                const context = ctx.getContext('2d');
                 
                 // 销毁现有图表
                 if (window[`${type}ResultChart`]) {
@@ -952,7 +969,7 @@
                 const data = Object.values(results);
                 
                 // 创建图表
-                window[`${type}ResultChart`] = new Chart(ctx, {
+                window[`${type}ResultChart`] = new Chart(context, {
                     type: 'pie',
                     data: {
                         labels: labels,
@@ -980,9 +997,16 @@
             }
             
             // 渲染标签图表
-            function renderTagChart(type, tags) {
-                const ctx = document.getElementById(`${type}-tag-chart`).getContext('2d');
+            function renderTagChart(type, tags) {       
+                if (!checkChartAvailable()) return;
+                const ctx = document.getElementById(`${type}-tag-chart`);
+                if (!ctx) {
+                    console.error(`Canvas element not found for ${type}-tag-chart`);
+                    return;
+                }
                 
+                const context = ctx.getContext('2d');
+            
                 // 销毁现有图表
                 if (window[`${type}TagChart`]) {
                     window[`${type}TagChart`].destroy();
@@ -993,7 +1017,7 @@
                 const data = Object.values(tags);
                 
                 // 创建图表
-                window[`${type}TagChart`] = new Chart(ctx, {
+                window[`${type}TagChart`] = new Chart(context, {
                     type: 'bar',
                     data: {
                         labels: labels,

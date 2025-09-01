@@ -112,6 +112,7 @@
             display: flex;
             margin-bottom: 20px;
             border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
         }
         
         .tab {
@@ -123,6 +124,7 @@
             margin-right: 5px;
             border-radius: 5px 5px 0 0;
             transition: all 0.3s ease;
+            margin-bottom: 5px;
         }
         
         .tab.active {
@@ -398,6 +400,21 @@
             button {
                 width: 100%;
             }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                margin-right: 0;
+                margin-bottom: 5px;
+                border-radius: 4px;
+                border: 1px solid #ddd;
+            }
+            
+            .tab.active {
+                border-radius: 4px 4px 0 0;
+            }
         }
     </style>
 </head>
@@ -411,8 +428,9 @@
      		<div class="tabs">
          <div class="tab active" data-tab="comment">智能评论巡检</div>
          <div class="tab" data-tab="cover">智能封面巡检</div>
-          <!-- 新增智慧Push审核标签 -->
          <div class="tab" data-tab="push">智慧Push巡检</div>
+         <!-- 新增品牌守护巡检标签 -->
+         <div class="tab" data-tab="brand">品牌守护巡检</div>
          <div class="tab" data-tab="history">历史记录</div>
             </div>
 		
@@ -593,6 +611,65 @@
         </div>
     </div>
 </div>
+
+        <!-- 品牌守护巡检标签页 -->
+        <div id="brand-tab" class="tab-content">
+            <h3>品牌守护内容巡检</h3>
+    
+            <div class="form-group">
+                <label for="brand-api-key">
+                    Agent API密钥 
+                    <span style="color: red;">*</span>
+                    <span class="tooltip">
+                        <span class="icon">?</span>
+                        <span class="tooltip-text">九问Bot API密钥</span>
+                    </span>
+                </label>
+                <input type="text" id="brand-api-key" placeholder="请输入API密钥">
+            </div>
+          
+            <div class="form-group">
+                <label>上传数据进行AI品牌守护巡检</label>
+                <div class="file-upload">
+                    <button class="file-upload-btn">选择文件</button>
+                    <input type="file" id="brand-file" accept=".xlsx, .xls">
+                </div>
+                <div class="file-name" id="brand-file-name"></div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="brand-progress-bar-fill"></div>
+            </div>
+            <div id="brand-progress-text">0% (0/0)</div>
+            
+            <div class="status-message" id="brand-status-message">
+                请上传Excel文件并输入API密钥
+            </div>
+            
+            <div class="button-group">
+                <button id="brand-start-btn" class="btn-primary" disabled>开始巡检</button>
+                <button id="brand-pause-btn" class="btn-warning" disabled>暂停</button>
+                <button id="brand-resume-btn" class="btn-warning" disabled>继续</button>
+                <button id="brand-finish-btn" class="btn-success" disabled>完成</button>
+                <button id="brand-end-btn" class="btn-danger" disabled>结束任务</button>
+                <button id="brand-analyze-btn" class="btn-info" disabled>分析结果</button>
+                <button id="brand-download-btn" class="btn-info" disabled>下载结果</button>
+            </div>
+            
+            <div id="brand-result-container" class="result-container">
+                <h3>品牌守护审核结果分析</h3>
+                <div class="chart-container">
+                    <div class="chart">
+                        <h4>审核结果分布</h4>
+                        <canvas id="brand-result-chart"></canvas>
+                    </div>
+                    <div class="chart">
+                        <h4>违规标签分布</h4>
+                        <canvas id="brand-tag-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- 历史记录标签页 -->
         <div id="history-tab" class="tab-content">
@@ -644,22 +721,25 @@
                 });
             });
         
-            // 文件上传处理（新增push类型）
+            // 文件上传处理（新增brand类型）
             setupFileUpload('comment');
             setupFileUpload('cover');
-            setupFileUpload('push');  // 新增
+            setupFileUpload('push');
+            setupFileUpload('brand');  // 新增
             
-            // 按钮事件处理（新增push类型）
+            // 按钮事件处理（新增brand类型）
             setupButtonEvents('comment');
             setupButtonEvents('cover');
-            setupButtonEvents('push');  // 新增
+            setupFileUpload('push');
+            setupButtonEvents('brand');  // 新增
             
-            // 初始化状态检查（新增push类型）
+            // 初始化状态检查（新增brand类型）
             checkStatus('comment');
             checkStatus('cover');
-            checkStatus('push');  // 新增
+            checkStatus('push');
+            checkStatus('brand');  // 新增
             
-            // 定时刷新状态（新增push类型）
+            // 定时刷新状态（新增brand类型）
             setInterval(() => {
                 if (document.getElementById('comment-tab').classList.contains('active')) {
                     checkStatus('comment');
@@ -667,6 +747,8 @@
                     checkStatus('cover');
                 } else if (document.getElementById('push-tab').classList.contains('active')) {
                     checkStatus('push');
+                } else if (document.getElementById('brand-tab').classList.contains('active')) {
+                    checkStatus('brand');
                 }
             }, 1000);
 
@@ -1068,7 +1150,8 @@
                         const auditTypeText = 
                             record.audit_type === 'comment' ? '评论审核' : 
                             record.audit_type === 'cover' ? '封面审核' : 
-                            '智慧Push审核';
+                            record.audit_type === 'push' ? '智慧Push审核' : 
+                            '品牌守护审核';
                         
                         historyItem.innerHTML = `
                             <h4>${auditTypeText}</h4>

@@ -11,8 +11,6 @@ AI智能内容巡检系统 - 修复版
 3. 过滤think标签内容，只解析实际结果
 4. 增加备用解析策略和错误处理机制
 5. 新增品牌守护审核功能，集成pro.py中的代码
-
-Python 2.7 兼容版本
 """
 
 import os
@@ -128,12 +126,12 @@ def update_statistics(audit_type, session_id, result, tags):
 def get_upload_path(audit_type, session_id):
     """获取上传文件路径 - 使用传入的session_id而非Flask session"""
     task_id = get_task_id(audit_type, session_id)
-    return os.path.join(UPLOAD_FOLDER, "%s_%s.xlsx" % (audit_type, task_id))
+    return os.path.join(UPLOAD_FOLDER, f"{audit_type}_{task_id}.xlsx")
 
 def get_result_path(audit_type, session_id):
     """获取结果文件路径 - 使用传入的session_id而非Flask session"""
     task_id = get_task_id(audit_type, session_id)
-    return os.path.join(RESULT_FOLDER, "%s_%s_result.xlsx" % (audit_type, task_id))
+    return os.path.join(RESULT_FOLDER, f"{audit_type}_{task_id}_result.xlsx")
 
 def add_to_history(audit_type, session_id):
     """添加到历史记录 - 使用传入的session_id而非Flask session"""
@@ -162,7 +160,7 @@ def upload_file():
         valid_audit_types = ['comment', 'cover', 'push', 'brand']
         if audit_type not in valid_audit_types:
             return jsonify({
-                'error': '无效的审核类型: %s' % audit_type,
+                'error': f'无效的审核类型: {audit_type}',
                 'valid_types': valid_audit_types
             }), 400
         
@@ -228,8 +226,8 @@ def upload_file():
         return jsonify({'message': '文件上传成功'})
         
     except Exception as e:
-        logger.error("文件上传错误: %s" % str(e))
-        return jsonify({'error': '文件上传失败: %s' % str(e)}), 500
+        logger.error(f"文件上传错误: {str(e)}")
+        return jsonify({'error': f'文件上传失败: {str(e)}'}), 500
 
 @app.route('/run', methods=['POST'])
 def run_task():
@@ -271,8 +269,8 @@ def run_task():
         return jsonify({'message': '任务已启动'})
         
     except Exception as e:
-        logger.error("启动任务错误: %s" % str(e))
-        return jsonify({'error': '启动任务失败: %s' % str(e)}), 500
+        logger.error(f"启动任务错误: {str(e)}")
+        return jsonify({'error': f'启动任务失败: {str(e)}'}), 500
 
 @app.route('/status/<audit_type>')
 def get_status(audit_type):
@@ -300,8 +298,8 @@ def get_status(audit_type):
         })
         
     except Exception as e:
-        logger.error("获取状态错误: %s" % str(e))
-        return jsonify({'error': '获取状态失败: %s' % str(e)}), 500
+        logger.error(f"获取状态错误: {str(e)}")
+        return jsonify({'error': f'获取状态失败: {str(e)}'}), 500
 
 @app.route('/control', methods=['POST'])
 def control_task():
@@ -356,8 +354,8 @@ def control_task():
             return jsonify({'message': '任务已结束'})
         
     except Exception as e:
-        logger.error("控制任务错误: %s" % str(e))
-        return jsonify({'error': '控制任务失败: %s' % str(e)}), 500
+        logger.error(f"控制任务错误: {str(e)}")
+        return jsonify({'error': f'控制任务失败: {str(e)}'}), 500
 
 @app.route('/statistics/<audit_type>')
 def get_statistics(audit_type):
@@ -384,8 +382,8 @@ def get_statistics(audit_type):
         return jsonify(statistics)
         
     except Exception as e:
-        logger.error("获取统计数据错误: %s" % str(e))
-        return jsonify({'error': '获取统计数据失败: %s' % str(e)}), 500
+        logger.error(f"获取统计数据错误: {str(e)}")
+        return jsonify({'error': f'获取统计数据失败: {str(e)}'}), 500
 
 @app.route('/download/<audit_type>')
 def download_result(audit_type):
@@ -406,8 +404,8 @@ def download_result(audit_type):
         return send_file(result_path, as_attachment=True)
         
     except Exception as e:
-        logger.error("下载结果错误: %s" % str(e))
-        return jsonify({'error': '下载结果失败: %s' % str(e)}), 500
+        logger.error(f"下载结果错误: {str(e)}")
+        return jsonify({'error': f'下载结果失败: {str(e)}'}), 500
 
 @app.route('/history')
 def get_history():
@@ -416,8 +414,8 @@ def get_history():
         return jsonify({'history': history_records})
         
     except Exception as e:
-        logger.error("获取历史记录错误: %s" % str(e))
-        return jsonify({'error': '获取历史记录失败: %s' % str(e)}), 500
+        logger.error(f"获取历史记录错误: {str(e)}")
+        return jsonify({'error': f'获取历史记录失败: {str(e)}'}), 500
 
 @app.route('/history/download/<history_id>')
 def download_history(history_id):
@@ -437,8 +435,8 @@ def download_history(history_id):
         return jsonify({'error': '历史记录不存在'}), 404
         
     except Exception as e:
-        logger.error("下载历史结果错误: %s" % str(e))
-        return jsonify({'error': '下载历史结果失败: %s' % str(e)}), 500
+        logger.error(f"下载历史结果错误: {str(e)}")
+        return jsonify({'error': f'下载历史结果失败: {str(e)}'}), 500
 
 def process_comment_file(filename, api_key, session_id):
     """处理评论文件 - 使用传入的session_id而非Flask session"""
@@ -463,7 +461,7 @@ def process_comment_file(filename, api_key, session_id):
         df['审核时间'] = ''
         
         total_rows = len(df)
-        update_task_status('comment', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条评论' % total_rows)
+        update_task_status('comment', session_id, total=total_rows, message=f'数据准备完成，开始处理 {total_rows} 条评论')
         
         # 逐行处理数据
         for index, row in df.iterrows():
@@ -482,7 +480,7 @@ def process_comment_file(filename, api_key, session_id):
                 # 更新进度
                 processed = index + 1
                 progress = int((processed / total_rows) * 100)
-                update_task_status('comment', session_id, progress=progress, processed=processed, message='开始处理评论 #%d/%d' % (index+1, total_rows))
+                update_task_status('comment', session_id, progress=progress, processed=processed, message=f'开始处理评论 #{index+1}/{total_rows}')
                 
                 # 处理评论
                 comment = row['评论内容']
@@ -508,8 +506,8 @@ def process_comment_file(filename, api_key, session_id):
                 # 继续处理下一条，不中断循环
                 continue
             except Exception as e:
-                logger.error("评论处理项目 #%d 错误: %s" % (index, str(e)))
-                update_task_status('comment', session_id, message='项目 #%d 处理异常: %s，继续处理下一项' % (index+1, str(e)), status='warning')
+                logger.error(f"评论处理项目 #{index} 错误: {str(e)}")
+                update_task_status('comment', session_id, message=f'项目 #{index+1} 处理异常: {str(e)}，继续处理下一项', status='warning')
                 
                 # 更新结果为处理失败
                 df.at[index, '审核结果'] = '处理失败'
@@ -537,8 +535,8 @@ def process_comment_file(filename, api_key, session_id):
         add_to_history('comment', session_id)
         
     except Exception as e:
-        logger.error("评论处理错误: %s" % str(e))
-        update_task_status('comment', session_id, status='error', message='处理出错: %s' % str(e))
+        logger.error(f"评论处理错误: {str(e)}")
+        update_task_status('comment', session_id, status='error', message=f'处理出错: {str(e)}')
 
 def process_cover_file(filename, api_key, session_id):
     """处理封面文件 - 使用传入的session_id而非Flask session"""
@@ -564,7 +562,7 @@ def process_cover_file(filename, api_key, session_id):
         df['审核时间'] = ''
         
         total_rows = len(df)
-        update_task_status('cover', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条封面链接' % total_rows)
+        update_task_status('cover', session_id, total=total_rows, message=f'数据准备完成，开始处理 {total_rows} 条封面链接')
         
         # 逐行处理数据
         for index, row in df.iterrows():
@@ -583,7 +581,7 @@ def process_cover_file(filename, api_key, session_id):
                 # 更新进度
                 processed = index + 1
                 progress = int((processed / total_rows) * 100)
-                update_task_status('cover', session_id, progress=progress, processed=processed, message='开始处理项目 #%d/%d' % (index+1, total_rows))
+                update_task_status('cover', session_id, progress=progress, processed=processed, message=f'开始处理项目 #{index+1}/{total_rows}')
                 
                 # 处理封面
                 cover_url = row['封面链接']
@@ -607,14 +605,14 @@ def process_cover_file(filename, api_key, session_id):
                 df.to_excel(result_path, index=False)
                 
                 # 添加处理完成日志
-                update_task_status('cover', session_id, message='项目 #%d/%d 处理完成，结果: %s' % (index+1, total_rows, result), status='processing')
+                update_task_status('cover', session_id, message=f'项目 #{index+1}/{total_rows} 处理完成，结果: {result}', status='processing')
                 
                 # 添加间隔，避免请求过快
                 time.sleep(1)
                 
             except Exception as e:
-                logger.error("封面处理项目 #%d 错误: %s" % (index, str(e)))
-                update_task_status('cover', session_id, message='项目 #%d 处理异常: %s，继续处理下一项' % (index+1, str(e)), status='warning')
+                logger.error(f"封面处理项目 #{index} 错误: {str(e)}")
+                update_task_status('cover', session_id, message=f'项目 #{index+1} 处理异常: {str(e)}，继续处理下一项', status='warning')
                 
                 # 更新结果为处理失败
                 df.at[index, '审核结果'] = '处理失败'
@@ -642,8 +640,8 @@ def process_cover_file(filename, api_key, session_id):
         add_to_history('cover', session_id)
         
     except Exception as e:
-        logger.error("封面处理错误: %s" % str(e))
-        update_task_status('cover', session_id, status='error', message='处理出错: %s' % str(e))
+        logger.error(f"封面处理错误: {str(e)}")
+        update_task_status('cover', session_id, status='error', message=f'处理出错: {str(e)}')
 
 def process_comment(comment, api_key):
     """处理单条评论 - 修复版本，解决API结果解析问题
@@ -664,7 +662,7 @@ def process_comment(comment, api_key):
         try:
             # 构建请求数据
             data = {
-                "query": "请审核以下评论内容是否低质，并给出审核结果和低质标签：\n\n%s" % comment,
+                "query": f"请审核以下评论内容是否低质，并给出审核结果和低质标签：\n\n{comment}",
                 "inputs": {},
                 "response_mode": "blocking",
                 "user": "audit_system"
@@ -673,10 +671,10 @@ def process_comment(comment, api_key):
             # 发送请求
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer %s" % api_key
+                "Authorization": f"Bearer {api_key}"
             }
             
-            logger.info("评论审核请求数据: %s" % json.dumps(data))
+            logger.info(f"评论审核请求数据: {json.dumps(data)}")
             
             # 发送请求，添加3000秒超时机制
             response = requests.post(
@@ -686,15 +684,15 @@ def process_comment(comment, api_key):
                 timeout=api_timeout
             )
             
-            logger.info("评论审核响应状态: %d" % response.status_code)
+            logger.info(f"评论审核响应状态: {response.status_code}")
             
             # 处理非200状态码
             if response.status_code != 200:
-                logger.error("评论审核响应错误: %s" % response.text)
+                logger.error(f"评论审核响应错误: {response.text}")
                 # 特殊处理501错误
                 if response.status_code == 501 and "conversation_id" in response.text:
                     retry_count += 1
-                    logger.warning("501错误触发重试 (%d/%d)" % (retry_count, max_retries))
+                    logger.warning(f"501错误触发重试 ({retry_count}/{max_retries})")
                     time.sleep(2)
                     continue
                 # 其他非200状态码直接引发异常
@@ -703,19 +701,19 @@ def process_comment(comment, api_key):
             # 解析响应
             result_data = response.json()
             assistant_message = result_data.get('answer', '')
-            logger.info("评论审核原始响应: %s" % assistant_message)
+            logger.info(f"评论审核原始响应: {assistant_message}")
             
             # 解析API返回结果
             result, tags = parse_audit_result(assistant_message)
             
-            logger.info("评论审核解析结果: %s, 标签: %s" % (result, tags))
+            logger.info(f"评论审核解析结果: {result}, 标签: {tags}")
             return result, tags
             
         except requests.exceptions.Timeout as timeout_err:
             # 专门处理超时异常
             retry_count += 1
             timeout_type = "连接" if "connect" in str(timeout_err).lower() else "读取"
-            logger.error("API请求超时 (%s) (尝试 %d/%d): %s" % (timeout_type, retry_count, max_retries, str(timeout_err)))
+            logger.error(f"API请求超时 ({timeout_type}) (尝试 {retry_count}/{max_retries}): {str(timeout_err)}")
             
             if retry_count >= max_retries:
                 logger.critical("API请求达到最大超时重试次数")
@@ -723,13 +721,13 @@ def process_comment(comment, api_key):
             
             # 指数退避策略
             sleep_time = 2 ** retry_count
-            logger.info("将在 %d 秒后重试..." % sleep_time)
+            logger.info(f"将在 {sleep_time} 秒后重试...")
             time.sleep(sleep_time)
             
         except requests.exceptions.RequestException as req_err:
             # 处理其他网络请求异常
             retry_count += 1
-            logger.error("网络请求异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(req_err)))
+            logger.error(f"网络请求异常 (尝试 {retry_count}/{max_retries}): {str(req_err)}")
             
             if retry_count >= max_retries:
                 return '处理失败', []
@@ -739,7 +737,7 @@ def process_comment(comment, api_key):
         except Exception as e:
             # 处理其他所有异常
             retry_count += 1
-            logger.error("未处理的异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(e)))
+            logger.error(f"未处理的异常 (尝试 {retry_count}/{max_retries}): {str(e)}")
             
             if retry_count >= max_retries:
                 return '处理失败', []
@@ -777,7 +775,7 @@ def parse_audit_result(assistant_message):
         # 清理多余的空白字符
         filtered_message = filtered_message.strip()
         
-        logger.info("过滤think标签后的内容: %s" % filtered_message)
+        logger.info(f"过滤think标签后的内容: {filtered_message}")
         
         # 第二步：尝试多种正则表达式模式解析结果
         
@@ -807,7 +805,7 @@ def parse_audit_result(assistant_message):
                 if result_match:
                     result = result_match.group(1).strip()
                     result_found = True
-                    logger.info("使用模式%d成功解析结果: %s" % (i+1, result))
+                    logger.info(f"使用模式{i+1}成功解析结果: {result}")
             
             if not tag_found:
                 tag_match = re.search(tag_pattern, filtered_message, re.IGNORECASE)
@@ -815,7 +813,7 @@ def parse_audit_result(assistant_message):
                     tag_str = tag_match.group(1).strip()
                     tags = parse_tags(tag_str)
                     tag_found = True
-                    logger.info("使用模式%d成功解析标签: %s" % (i+1, tags))
+                    logger.info(f"使用模式{i+1}成功解析标签: {tags}")
         
         # 第三步：备用解析策略 - 基于关键词匹配
         if not result_found:
@@ -841,10 +839,10 @@ def parse_audit_result(assistant_message):
         if result == '低质' and not tags:
             tags = extract_tags_from_content(filtered_message)
         
-        logger.info("最终解析结果: 结果=%s, 标签=%s" % (result, tags))
+        logger.info(f"最终解析结果: 结果={result}, 标签={tags}")
         
     except Exception as e:
-        logger.error("解析审核结果时发生异常: %s" % str(e))
+        logger.error(f"解析审核结果时发生异常: {str(e)}")
         result = "处理失败"
         tags = []
     
@@ -916,7 +914,7 @@ def extract_tags_from_content(content):
 def process_cover(cover_url, api_key, index, session_id):
     """处理单条封面链接 - 适配新的API接口"""
     # 应用速率限制
-    update_task_status('cover', session_id, message='项目 #%d 应用速率限制...' % (index+1))
+    update_task_status('cover', session_id, message=f'项目 #{index+1} 应用速率限制...')
     time.sleep(1)  # 确保请求间隔至少1秒
     
     # 最大重试次数
@@ -942,29 +940,29 @@ def process_cover(cover_url, api_key, index, session_id):
             # 发送请求
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer %s" % api_key  # 保持Bearer和密钥之间的空格
+                "Authorization": f"Bearer {api_key}"  # 保持Bearer和密钥之间的空格
             }
             
             # 打印请求数据用于调试
-            logger.info("封面审核请求数据: %s" % json.dumps(data))
+            logger.info(f"封面审核请求数据: {json.dumps(data)}")
             
             # 记录开始时间
             start_time = time.time()
             
             # 发送请求
-            update_task_status('cover', session_id, message='项目 #%d 发送请求 (尝试 %d/%d)...' % (index+1, retry_count+1, max_retries))
+            update_task_status('cover', session_id, message=f'项目 #{index+1} 发送请求 (尝试 {retry_count+1}/{max_retries})...')
             response = requests.post(API_URL, headers=headers, json=data)
             
             # 打印响应状态和内容用于调试
-            logger.info("封面审核响应状态: %d" % response.status_code)
+            logger.info(f"封面审核响应状态: {response.status_code}")
             if response.status_code != 200:
-                logger.error("封面审核响应错误: %s" % response.text)
+                logger.error(f"封面审核响应错误: {response.text}")
                 
                 # 特殊处理501错误（对话ID不存在）
                 if response.status_code == 501 and "conversation_id" in response.text:
                     # 重新尝试，不使用conversation_id
                     retry_count += 1
-                    logger.info("封面审核重试 %d/%d" % (retry_count, max_retries))
+                    logger.info(f"封面审核重试 {retry_count}/{max_retries}")
                     time.sleep(2)  # 等待2秒后重试
                     continue
             
@@ -976,7 +974,7 @@ def process_cover(cover_url, api_key, index, session_id):
             
             # 保存conversation_id以便后续使用
             conversation_id = result_data.get('conversation_id', '')
-            logger.info("获取到conversation_id: %s" % conversation_id)
+            logger.info(f"获取到conversation_id: {conversation_id}")
             
             # 提取审核结果和标签
             result = '正常'  # 默认为正常
@@ -1001,25 +999,25 @@ def process_cover(cover_url, api_key, index, session_id):
                         break
             
             # 记录解析结果
-            logger.info("封面审核结果: %s, 标签: %s" % (result, tags))
+            logger.info(f"封面审核结果: {result}, 标签: {tags}")
             return result, tags
             
         except requests.exceptions.Timeout as timeout_err:
             retry_count += 1
             timeout_type = "连接" if "connect" in str(timeout_err).lower() else "读取"
-            logger.error("API请求超时 (%s) (尝试 %d/%d): %s" % (timeout_type, retry_count, max_retries, str(timeout_err)))
+            logger.error(f"API请求超时 ({timeout_type}) (尝试 {retry_count}/{max_retries}): {str(timeout_err)}")
             
             if retry_count >= max_retries:
                 logger.critical("API请求达到最大超时重试次数")
                 return '处理失败', []
             
             sleep_time = 2 ** retry_count
-            logger.info("将在 %d 秒后重试..." % sleep_time)
+            logger.info(f"将在 {sleep_time} 秒后重试...")
             time.sleep(sleep_time)
             
         except requests.exceptions.RequestException as req_err:
             retry_count += 1
-            logger.error("网络请求异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(req_err)))
+            logger.error(f"网络请求异常 (尝试 {retry_count}/{max_retries}): {str(req_err)}")
             
             if retry_count >= max_retries:
                 return '处理失败', []
@@ -1028,7 +1026,7 @@ def process_cover(cover_url, api_key, index, session_id):
             
         except Exception as e:
             retry_count += 1
-            logger.error("未处理的异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(e)))
+            logger.error(f"未处理的异常 (尝试 {retry_count}/{max_retries}): {str(e)}")
             
             if retry_count >= max_retries:
                 return '处理失败', []
@@ -1055,7 +1053,7 @@ def process_push_file(filename, api_key, session_id):
         df['审核时间'] = ''
         
         total_rows = len(df)
-        update_task_status('push', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条push内容' % total_rows)
+        update_task_status('push', session_id, total=total_rows, message=f'数据准备完成，开始处理 {total_rows} 条push内容')
         
         for index, row in df.iterrows():
             try:
@@ -1069,7 +1067,7 @@ def process_push_file(filename, api_key, session_id):
                 
                 processed = index + 1
                 progress = int((processed / total_rows) * 100)
-                update_task_status('push', session_id, progress=progress, processed=processed, message='开始处理push内容 #%d/%d' % (index+1, total_rows))
+                update_task_status('push', session_id, progress=progress, processed=processed, message=f'开始处理push内容 #{index+1}/{total_rows}')
                 
                 push_content = row['push内容']
                 result, tags = process_push(push_content, api_key, session_id)
@@ -1087,12 +1085,12 @@ def process_push_file(filename, api_key, session_id):
                 result_path = get_result_path('push', session_id)
                 df.to_excel(result_path, index=False)
                 
-                update_task_status('push', session_id, message='push内容 #%d/%d 处理完成，结果: %s' % (index+1, total_rows, result), status='processing')
+                update_task_status('push', session_id, message=f'push内容 #{index+1}/{total_rows} 处理完成，结果: {result}', status='processing')
                 time.sleep(1)
                 
             except Exception as e:
-                logger.error("push内容处理项目 #%d 错误: %s" % (index, str(e)))
-                update_task_status('push', session_id, message='push内容 #%d 处理异常: %s，继续处理下一项' % (index+1, str(e)), status='warning')
+                logger.error(f"push内容处理项目 #{index} 错误: {str(e)}")
+                update_task_status('push', session_id, message=f'push内容 #{index+1} 处理异常: {str(e)}，继续处理下一项', status='warning')
                 
                 df.at[index, '审核结果'] = '处理失败'
                 df.at[index, '违规标签'] = '/'
@@ -1112,8 +1110,8 @@ def process_push_file(filename, api_key, session_id):
         add_to_history('push', session_id)
         
     except Exception as e:
-        logger.error("智慧push处理错误: %s" % str(e))
-        update_task_status('push', session_id, status='error', message='处理出错: %s' % str(e))
+        logger.error(f"智慧push处理错误: {str(e)}")
+        update_task_status('push', session_id, status='error', message=f'处理出错: {str(e)}')
 
 def process_push(push_content, api_key, session_id):
     """处理单条智慧push内容 - 适配新的API接口"""
@@ -1127,7 +1125,7 @@ def process_push(push_content, api_key, session_id):
     while retry_count < max_retries:
         try:
             data = {
-                "query": "请审核以下push内容是否违规，并给出审核结果和违规标签：\n\n%s" % push_content,
+                "query": f"请审核以下push内容是否违规，并给出审核结果和违规标签：\n\n{push_content}",
                 "inputs": {},
                 "response_mode": "blocking",
                 "user": "audit_system"
@@ -1139,10 +1137,10 @@ def process_push(push_content, api_key, session_id):
             
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer %s" % api_key
+                "Authorization": f"Bearer {api_key}"
             }
             
-            logger.info("push审核请求数据: %s" % json.dumps(data))
+            logger.info(f"push审核请求数据: {json.dumps(data)}")
             
             response = requests.post(
                 API_URL, 
@@ -1151,13 +1149,13 @@ def process_push(push_content, api_key, session_id):
                 timeout=api_timeout
             )
             
-            logger.info("push审核响应状态: %d" % response.status_code)
+            logger.info(f"push审核响应状态: {response.status_code}")
             
             if response.status_code != 200:
-                logger.error("push审核响应错误: %s" % response.text)
+                logger.error(f"push审核响应错误: {response.text}")
                 if response.status_code == 501 and "conversation_id" in response.text:
                     # 501错误通常表示conversation_id无效，清空后重试
-                    logger.warning("501错误，清空conversation_id并重试 (%d/%d)" % (retry_count, max_retries))
+                    logger.warning(f"501错误，清空conversation_id并重试 ({retry_count}/{max_retries})")
                     task_status['push'][session_id]['conversation_id'] = '' # 清空无效的conversation_id
                     conversation_id = ''
                     retry_count += 1
@@ -1176,25 +1174,25 @@ def process_push(push_content, api_key, session_id):
             
             result, tags = parse_audit_result(assistant_message)
             
-            logger.info("push审核解析结果: %s, 标签: %s" % (result, tags))
+            logger.info(f"push审核解析结果: {result}, 标签: {tags}")
             return result, tags
             
         except requests.exceptions.Timeout as timeout_err:
             retry_count += 1
             timeout_type = "连接" if "connect" in str(timeout_err).lower() else "读取"
-            logger.error("API请求超时 (%s) (尝试 %d/%d): %s" % (timeout_type, retry_count, max_retries, str(timeout_err)))
+            logger.error(f"API请求超时 ({timeout_type}) (尝试 {retry_count}/{max_retries}): {str(timeout_err)}")
             
             if retry_count >= max_retries:
                 logger.critical("API请求达到最大超时重试次数")
                 return '处理失败', []
             
             sleep_time = 2 ** retry_count
-            logger.info("将在 %d 秒后重试..." % sleep_time)
+            logger.info(f"将在 {sleep_time} 秒后重试...")
             time.sleep(sleep_time)
             
         except requests.exceptions.RequestException as req_err:
             retry_count += 1
-            logger.error("网络请求异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(req_err)))
+            logger.error(f"网络请求异常 (尝试 {retry_count}/{max_retries}): {str(req_err)}")
             
             if retry_count >= max_retries:
                 return '处理失败', []
@@ -1203,7 +1201,7 @@ def process_push(push_content, api_key, session_id):
             
         except Exception as e:
             retry_count += 1
-            logger.error("未处理的异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(e)))
+            logger.error(f"未处理的异常 (尝试 {retry_count}/{max_retries}): {str(e)}")
             
             if retry_count >= max_retries:
                 return '处理失败', []
@@ -1227,12 +1225,12 @@ class BrandRateLimiter:
     """精确的令牌桶速率限制器 (从pro.py复制)"""
     def __init__(self):
         self.tokens = BRAND_BUCKET_CAPACITY
-        self.last_time = time.time()
+        self.last_time = time.monotonic()
         self.lock = Lock()
 
     def acquire(self):
         with self.lock:
-            current_time = time.time()
+            current_time = time.monotonic()
             elapsed = current_time - self.last_time
             
             # 计算新增令牌
@@ -1245,7 +1243,7 @@ class BrandRateLimiter:
                 sleep_time = deficit / BRAND_RATE_LIMIT
                 time.sleep(sleep_time)
                 self.tokens = 0.0
-                self.last_time = time.time() + sleep_time
+                self.last_time = time.monotonic() + sleep_time
             else:
                 self.tokens -= 1.0
                 self.last_time = current_time
@@ -1296,8 +1294,7 @@ def parse_brand_audit_result(answer):
             r'（1）审核结果[：:]\s*([^（]+?)\s*'
             r'（2）违规标签[：:]\s*([^）]+)'
         )
-        match = pattern.search(clean_answer)
-        if match:
+        if match := pattern.search(clean_answer):
             audit_result = match.group(1).strip()
             violation_tag = match.group(2).strip()
         else:
@@ -1311,7 +1308,7 @@ def parse_brand_audit_result(answer):
 
         return clean_text(audit_result), clean_text(violation_tag)
     except Exception as e:
-        logger.error("[品牌守护解析异常] 原始响应：%s... 错误: %s" % (answer[:200], e))
+        logger.error(f"[品牌守护解析异常] 原始响应：{answer[:200]}... 错误: {e}")
         return ("解析失败", "解析失败")
 
 def process_brand_comment(args, api_key, session_id):
@@ -1325,7 +1322,7 @@ def process_brand_comment(args, api_key, session_id):
         
         # 准备请求
         headers = {
-            "Authorization": "Bearer %s" % api_key,
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         
@@ -1351,14 +1348,14 @@ def process_brand_comment(args, api_key, session_id):
         return index, audit_res, tag, time.time() - start_time
         
     except requests.exceptions.HTTPError as e:
-        logger.error("品牌守护HTTP错误: %d - %s" % (e.response.status_code, e.response.text[:100]))
+        logger.error(f"品牌守护HTTP错误: {e.response.status_code} - {e.response.text[:100]}")
         if e.response.status_code == 429:
             retry_after = e.response.headers.get('Retry-After', BRAND_BACKOFF_FACTOR)
-            logger.warning("品牌守护触发速率限制，等待 %s 秒后重试..." % retry_after)
+            logger.warning(f"品牌守护触发速率限制，等待 {retry_after} 秒后重试...")
             time.sleep(float(retry_after))
         return index, "HTTP错误", str(e)[:50], 0
     except Exception as e:
-        logger.error("品牌守护处理异常: %s" % e)
+        logger.error(f"品牌守护处理异常: {e}")
         return index, "处理异常", str(e)[:50], 0
 
 def process_brand_file(filename, api_key, session_id):
@@ -1379,50 +1376,47 @@ def process_brand_file(filename, api_key, session_id):
         df['审核时间'] = ''
         
         total_rows = len(df)
-        update_task_status('brand', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条品牌标题' % total_rows)
+        update_task_status('brand', session_id, total=total_rows, message=f'数据准备完成，开始处理 {total_rows} 条品牌标题')
         
-        # 改为顺序处理，避免并发问题
-        processed_count = 0
-        
-        for index, row in df.iterrows():
-            try:
-                # 检查是否暂停
-                while task_status['brand'][session_id]['paused']:
-                    time.sleep(0.5)
-                    if task_status['brand'][session_id]['status'] == 'idle':
-                        return
-                
-                if task_status['brand'][session_id]['status'] != 'processing':
-                    break
-                
-                # 处理品牌标题
-                idx, result, tag, latency = process_brand_comment((index, row['品牌标题']), api_key, session_id)
-                df.at[idx, '审核结果'] = result
-                df.at[idx, '违规标签'] = tag
-                df.at[idx, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
-                processed_count += 1
-                progress = int((processed_count / total_rows) * 100)
-                update_task_status('brand', session_id, progress=progress, processed=processed_count, message='处理品牌标题 #%d/%d' % (processed_count, total_rows))
-                
-                # 更新统计
-                update_statistics('brand', session_id, result, [tag] if tag and tag != "解析失败" else [])
-                
-                # 每处理一定数量保存一次结果，确保不丢失进度
-                if processed_count % 50 == 0:
-                    result_path = get_result_path('brand', session_id)
-                    df.to_excel(result_path, index=False)
-                    logger.info("品牌守护：已保存中间结果到 %s" % result_path)
+        # 使用ThreadPoolExecutor进行并发处理
+        # max_workers 设定为速率限制，以避免超出API调用频率
+        with ThreadPoolExecutor(max_workers=int(BRAND_RATE_LIMIT)) as executor:
+            tasks = [(idx, row['品牌标题']) for idx, row in df.iterrows()]
+            # 传递api_key和session_id给process_brand_comment
+            future_to_index = {executor.submit(process_brand_comment, task, api_key, session_id): task[0] for task in tasks}
+            
+            processed_count = 0
+            
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                try:
+                    idx, result, tag, latency = future.result()
+                    df.at[idx, '审核结果'] = result
+                    df.at[idx, '违规标签'] = tag
+                    df.at[idx, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     
-            except Exception as e:
-                logger.error("品牌守护结果处理异常：%s" % str(e))
-                df.at[index, '审核结果'] = '处理失败'
-                df.at[index, '违规标签'] = '/'
-                df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                update_statistics('brand', session_id, '处理失败', [])
-                processed_count += 1 # 即使失败也要更新processed_count
-                progress = int((processed_count / total_rows) * 100)
-                update_task_status('brand', session_id, progress=progress, processed=processed_count, message='处理品牌标题 #%d/%d 异常' % (processed_count, total_rows), status='warning')
+                    processed_count += 1
+                    progress = int((processed_count / total_rows) * 100)
+                    update_task_status('brand', session_id, progress=progress, processed=processed_count, message=f'处理品牌标题 #{processed_count}/{total_rows}')
+                    
+                    # 更新统计
+                    update_statistics('brand', session_id, result, [tag] if tag and tag != "解析失败" else [])
+                    
+                    # 每处理一定数量保存一次结果，确保不丢失进度
+                    if processed_count % 50 == 0:
+                        result_path = get_result_path('brand', session_id)
+                        df.to_excel(result_path, index=False)
+                        logger.info(f"品牌守护：已保存中间结果到 {result_path}")
+                        
+                except Exception as e:
+                    logger.error(f"品牌守护结果处理异常：{str(e)}")
+                    df.at[index, '审核结果'] = '处理失败'
+                    df.at[index, '违规标签'] = '/'
+                    df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    update_statistics('brand', session_id, '处理失败', [])
+                    processed_count += 1 # 即使失败也要更新processed_count
+                    progress = int((processed_count / total_rows) * 100)
+                    update_task_status('brand', session_id, progress=progress, processed=processed_count, message=f'处理品牌标题 #{processed_count}/{total_rows} 异常', status='warning')
 
         # 保存最终结果
         result_path = get_result_path('brand', session_id)
@@ -1432,9 +1426,11 @@ def process_brand_file(filename, api_key, session_id):
         add_to_history('brand', session_id)
         
     except Exception as e:
-        logger.error("品牌守护处理错误: %s" % str(e))
-        update_task_status('brand', session_id, status='error', message='处理出错: %s' % str(e))
+        logger.error(f"品牌守护处理错误: {str(e)}")
+        update_task_status('brand', session_id, status='error', message=f'处理出错: {str(e)}')
 
 # 确保Flask应用在直接运行时启动
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+

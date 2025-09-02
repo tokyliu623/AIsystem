@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>AI智能内容巡检系统</title>
     <style>
-         /* 新增的Tooltip样式 */
+        /* 新增的Tooltip样式 */
         .tooltip {
             position: relative;
             display: inline-block;
@@ -63,7 +63,7 @@
             visibility: visible;
             opacity: 1;
         }
-	   body {
+       body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
             margin: 0;
             padding: 0;
@@ -423,22 +423,22 @@
     <header>
         <h1><span class="ai-icon"></span>AI智能内容巡检系统<span class="ai-badge">智能分析</span></h1>
     </header>  
-	
-     <div class="container">
-     		<div class="tabs">
-         <div class="tab active" data-tab="comment">智能评论巡检</div>
-         <div class="tab" data-tab="cover">智能封面巡检</div>
-         <div class="tab" data-tab="push">智慧Push巡检</div>
-         <!-- 新增品牌守护巡检标签 -->
-         <div class="tab" data-tab="brand">品牌守护巡检</div>
-         <div class="tab" data-tab="history">历史记录</div>
-            </div>
-		
+    
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="comment">智能评论巡检</div>
+            <div class="tab" data-tab="cover">智能封面巡检</div>
+            <div class="tab" data-tab="push">智慧Push巡检</div>
+            <!-- 新增品牌守护巡检标签 -->
+            <div class="tab" data-tab="brand">品牌守护巡检</div>
+            <div class="tab" data-tab="history">历史记录</div>
+        </div>
+        
         <!-- 评论审核标签页 -->
         <div id="comment-tab" class="tab-content active">
             <h3>评论内容审核</h3>
-			
- 			<div class="form-group">
+            
+            <div class="form-group">
                 <!-- 修改点1：添加tooltip -->
                 <label for="comment-api-key">
                     Agent API密钥 
@@ -497,7 +497,7 @@
         <div id="cover-tab" class="tab-content">
             <h3>封面图片审核</h3>
             
-			<div class="form-group">
+            <div class="form-group">
                 <!-- 修改点2：添加tooltip -->
                 <label for="cover-api-key">
                     Agent API密钥 
@@ -509,7 +509,7 @@
                 </label>
                 <input type="text" id="cover-api-key" placeholder="请输入API密钥">
             </div>
-			          
+                      
             <div class="form-group">
                 <label>上传数据进行AI封面巡检</label>
                 <div class="file-upload">
@@ -553,64 +553,64 @@
             </div>
         </div>
 
-		 <!-- 智慧push巡检标签页 -->
-		<div id="push-tab" class="tab-content">
-        <h3>智慧Push内容巡检</h3>
-    
-         <div class="form-group">
-         <label for="push-api-key">
-            Agent API密钥 
-            <span style="color: red;">*</span>
-            <span class="tooltip">
-                <span class="icon">?</span>
-                <span class="tooltip-text">九问Bot API密钥</span>
-            </span>
-        </label>
-        <input type="text" id="push-api-key" placeholder="请输入API密钥">
-    </div>
-          
-    <div class="form-group">
-        <label>上传数据进行AI智慧Push巡检</label>
-        <div class="file-upload">
-            <button class="file-upload-btn">选择文件</button>
-            <input type="file" id="push-file" accept=".xlsx, .xls">
-        </div>
-        <div class="file-name" id="push-file-name"></div>
-    </div>
-    
-    <div class="progress-container">
-        <div class="progress-bar" id="push-progress-bar-fill"></div>
-    </div>
-    <div id="push-progress-text">0% (0/0)</div>
-    
-    <div class="status-message" id="push-status-message">
-        请上传Excel文件并输入API密钥
-    </div>
-    
-    <div class="button-group">
-        <button id="push-start-btn" class="btn-primary" disabled>开始巡检</button>
-        <button id="push-pause-btn" class="btn-warning" disabled>暂停</button>
-        <button id="push-resume-btn" class="btn-warning" disabled>继续</button>
-        <button id="push-finish-btn" class="btn-success" disabled>完成</button>
-        <button id="push-end-btn" class="btn-danger" disabled>结束任务</button>
-        <button id="push-analyze-btn" class="btn-info" disabled>分析结果</button>
-        <button id="push-download-btn" class="btn-info" disabled>下载结果</button>
-    </div>
-    
-    <div id="push-result-container" class="result-container">
-        <h3>智慧Push审核结果分析</h3>
-        <div class="chart-container">
-            <div class="chart">
-                <h4>审核结果分布</h4>
-                <canvas id="push-result-chart"></canvas>
+         <!-- 智慧push巡检标签页 -->
+        <div id="push-tab" class="tab-content">
+            <h3>智慧Push内容巡检</h3>
+        
+            <div class="form-group">
+                <label for="push-api-key">
+                    Agent API密钥 
+                    <span style="color: red;">*</span>
+                    <span class="tooltip">
+                        <span class="icon">?</span>
+                        <span class="tooltip-text">九问Bot API密钥</span>
+                    </span>
+                </label>
+                <input type="text" id="push-api-key" placeholder="请输入API密钥">
             </div>
-            <div class="chart">
-                <h4>低质标签分布</h4>
-                <canvas id="push-tag-chart"></canvas>
+                  
+            <div class="form-group">
+                <label>上传数据进行AI智慧Push巡检</label>
+                <div class="file-upload">
+                    <button class="file-upload-btn">选择文件</button>
+                    <input type="file" id="push-file" accept=".xlsx, .xls">
+                </div>
+                <div class="file-name" id="push-file-name"></div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="push-progress-bar-fill"></div>
+            </div>
+            <div id="push-progress-text">0% (0/0)</div>
+            
+            <div class="status-message" id="push-status-message">
+                请上传Excel文件并输入API密钥
+            </div>
+            
+            <div class="button-group">
+                <button id="push-start-btn" class="btn-primary" disabled>开始巡检</button>
+                <button id="push-pause-btn" class="btn-warning" disabled>暂停</button>
+                <button id="push-resume-btn" class="btn-warning" disabled>继续</button>
+                <button id="push-finish-btn" class="btn-success" disabled>完成</button>
+                <button id="push-end-btn" class="btn-danger" disabled>结束任务</button>
+                <button id="push-analyze-btn" class="btn-info" disabled>分析结果</button>
+                <button id="push-download-btn" class="btn-info" disabled>下载结果</button>
+            </div>
+            
+            <div id="push-result-container" class="result-container">
+                <h3>智慧Push审核结果分析</h3>
+                <div class="chart-container">
+                    <div class="chart">
+                        <h4>审核结果分布</h4>
+                        <canvas id="push-result-chart"></canvas>
+                    </div>
+                    <div class="chart">
+                        <h4>低质标签分布</h4>
+                        <canvas id="push-tag-chart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
         <!-- 品牌守护巡检标签页 -->
         <div id="brand-tab" class="tab-content">
@@ -627,7 +627,7 @@
                 </label>
                 <input type="text" id="brand-api-key" placeholder="请输入API密钥">
             </div>
-          
+                  
             <div class="form-group">
                 <label>上传数据进行AI品牌守护巡检</label>
                 <div class="file-upload">
@@ -721,25 +721,25 @@
                 });
             });
         
-            // 文件上传处理（新增brand类型）
+            // 文件上传处理
             setupFileUpload('comment');
             setupFileUpload('cover');
             setupFileUpload('push');
-            setupFileUpload('brand');  // 新增
+            setupFileUpload('brand');
             
-            // 按钮事件处理（新增brand类型）
+            // 按钮事件处理（修复了push类型）
             setupButtonEvents('comment');
             setupButtonEvents('cover');
-            setupFileUpload('push');
-            setupButtonEvents('brand');  // 新增
+            setupButtonEvents('push');  // 修复：这里原来是setupFileUpload('push')
+            setupButtonEvents('brand');
             
-            // 初始化状态检查（新增brand类型）
+            // 初始化状态检查
             checkStatus('comment');
             checkStatus('cover');
             checkStatus('push');
-            checkStatus('brand');  // 新增
+            checkStatus('brand');
             
-            // 定时刷新状态（新增brand类型）
+            // 定时刷新状态
             setInterval(() => {
                 if (document.getElementById('comment-tab').classList.contains('active')) {
                     checkStatus('comment');
@@ -760,7 +760,7 @@
                 });
             }
             
-            // 设置文件上传 - 修复点1：优化文件上传逻辑
+            // 设置文件上传
             function setupFileUpload(type) {
                 const fileInput = document.getElementById(`${type}-file`);
                 const fileNameDisplay = document.getElementById(`${type}-file-name`);
@@ -782,7 +782,7 @@
                     }
                 });
                 
-                // 修复点2：API密钥输入时更新按钮状态
+                // API密钥输入时更新按钮状态
                 apiKeyInput.addEventListener('input', () => {
                     // 检查文件是否已上传
                     if (fileNameDisplay.textContent) {
@@ -791,7 +791,7 @@
                 });
             }
 
-			 // 设置按钮事件
+            // 设置按钮事件
             function setupButtonEvents(type) {
                 const startButton = document.getElementById(`${type}-start-btn`);
                 const pauseButton = document.getElementById(`${type}-pause-btn`);
@@ -842,9 +842,9 @@
                 downloadButton.addEventListener('click', () => {
                     window.location.href = `/download/${type}?session_id=${sessionId}`;
                 });
-            }			
+            }           
             
-            // 上传文件 - 修复点3：简化上传逻辑
+            // 上传文件
             function uploadFile(type, file) {
                 const formData = new FormData();
                 formData.append('file', file);
@@ -1030,7 +1030,6 @@
                 });
             }
             
-            // 修复点4：将渲染函数移出嵌套结构
             // 渲染结果图表
             function renderResultChart(type, results) {
                 const ctx = document.getElementById(`${type}-result-chart`);

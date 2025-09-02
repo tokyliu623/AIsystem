@@ -1,7 +1,7 @@
 """
 AI智能内容巡检系统 - 修复版
 
-支持评论审核、封面审核和品牌守护审核功能
+支持评论审核、封面审核、智慧push审核和品牌守护审核功能
 
 主应用模块，处理Web请求和任务管理
 
@@ -11,6 +11,7 @@ AI智能内容巡检系统 - 修复版
 3. 过滤think标签内容，只解析实际结果
 4. 增加备用解析策略和错误处理机制
 5. 新增品牌守护审核功能，集成pro.py中的代码
+6. 修复push巡检功能，使其与"新增push巡检"版本保持一致
 
 Python 2.7 兼容版本
 """
@@ -1037,180 +1038,235 @@ def process_cover(cover_url, api_key, index, session_id):
     
     return '处理失败', []
 
-def process_push_file(filename, api_key, session_id):
-    """处理智慧push文件 - 使用传入的session_id而非Flask session"""
+# ================ 修复的智慧Push审核功能 ================
+
+def sanitize_fields(title, summary):
+    """双字段消毒处理"""
+    def clean_text(text):
+        if pd.isnull(text):
+            return ""
+        return re.sub(r'[\x00-\x1F\\"{}]', '', str(text))[:1500]
+    
+    clean_title = clean_text(title)
+    clean_summary = clean_text(summary)
+    return "标题：%s\n摘要：%s" % (clean_title, clean_summary)[:3000]
+
+def parse_audit_result_push(assistant_message):
+    """精准解析审核结果（增强版）"""
+        
+    # 最大重试次数
+    MAX_RETRIES = 3
+    TIMEOUT = 1500 
     try:
+        # 1. 过滤think标签内容
+        think_pattern = r'<think>.*?</think>'
+        filtered_message = re.sub(think_pattern, '', assistant_message, flags=re.DOTALL).strip()
+        logger.info("过滤后内容: %s..." % filtered_message[:200])
+        
+        # 2. 定义多种解析模式
+        patterns = [
+            # 模式1：带编号的标准格式
+            (r'（1）\s*审核结果\s*[:：]\s*(\S+)', r'（2）\s*低质标签\s*[:：]\s*(.+?)(?=\n|$)'),
+            # 模式2：不带编号的格式
+            (r'审核结果\s*[:：]\s*(\S+)', r'低质标签\s*[:：]\s*(.+?)(?=\n|$)'),
+            # 模式3：简化格式
+            (r'(?:审核结果|结果)\s*[:：]?\s*(正常|低质|违规)', r'(?:低质标签|标签|违规标签)\s*[:：]?\s*(.+?)(?=\n|$)')
+        ]
+        
+        result = "解析失败"
+        tags = []
+        
+        # 3. 尝试每种模式
+        for result_pattern, tag_pattern in patterns:
+            result_match = re.search(result_pattern, filtered_message, re.IGNORECASE)
+            tag_match = re.search(tag_pattern, filtered_message, re.IGNORECASE)
+            
+            if result_match and tag_match:
+                result = result_match.group(1).strip()
+                tag_str = tag_match.group(1).strip()
+                tags = parse_tags(tag_str)
+                logger.info("匹配成功: 结果=%s, 标签=%s" % (result, tags))
+                break
+        
+        # 4. 备用策略：关键词匹配
+        if result == "解析失败":
+            if '正常' in filtered_message and '违规' not in filtered_message and '低质' not in filtered_message:
+                result = '正常'
+            elif '低质' in filtered_message or '违规' in filtered_message:
+                result = '低质'
+            logger.info("关键词匹配: 结果=%s" % result)
+        
+        # 5. 后处理
+        if result == '正常':
+            tags = []  # 正常内容不应有标签
+            
+        return result, tags
+        
+    except Exception as e:
+        logger.error("解析异常: %s" % str(e))
+        return ("解析失败", [])
+
+def create_retry_session():
+    """创建带重试机制的请求会话"""
+    session = requests.Session()
+    retry = Retry(
+        total=MAX_RETRIES,
+        backoff_factor=1,
+        status_forcelist=[500, 502, 503, 504]
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
+
+def audit_content(title, summary, api_key, session_id):
+    """执行双字段内容审核（增强错误处理）"""
+    # 从任务状态中获取会话ID
+    if session_id in task_status['push']:
+        conversation_id = task_status['push'][session_id].get('conversation_id', '')
+    else:
+        conversation_id = ''
+    
+    headers = {
+        "Authorization": "Bearer %s" % api_key,
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "query": sanitize_fields(title, summary),
+        "inputs": {},
+        "user": "PUSH_AUDIT_BOT",
+        "conversation_id": conversation_id,
+        "response_mode": "blocking"
+    }
+    
+    session = create_retry_session()
+    try:
+        logger.info("发送审核请求: 标题=%s..." % title[:20])
+        response = session.post(
+            API_URL,
+            headers=headers,
+            json=payload,
+            timeout=TIMEOUT
+        )
+        response.raise_for_status()
+        
+        response_data = response.json()
+        # 更新会话ID
+        if session_id in task_status['push']:
+            task_status['push'][session_id]['conversation_id'] = response_data.get("conversation_id", '')
+        answer = response_data.get("answer", "")
+        logger.info("API原始响应: %s..." % answer[:200])
+        
+        return parse_audit_result_push(answer)
+        
+    except requests.exceptions.Timeout:
+        logger.error("请求超时: %s..." % title[:50])
+        return ("请求超时", [])
+    except Exception as e:
+        logger.error("服务异常: %s" % str(e))
+        return ("服务异常", [])
+
+def process_push_file(filename, api_key, session_id):
+    """处理智慧Push文件"""
+    try:
+        # 读取Excel文件
         update_task_status('push', session_id, message='读取文件中...')
         df = pd.read_excel(filename, engine='openpyxl')
         
-        if 'push内容' not in df.columns:
-            update_task_status('push', session_id, status='error', message='文件格式错误：缺少"push内容"列')
+        # 检查必要的列
+        if '标题' not in df.columns or '摘要' not in df.columns:
+            update_task_status('push', session_id, status='error', message='文件格式错误：缺少"标题"或"摘要"列')
             return
         
-        df = df.dropna(subset=['push内容'])
-        df = df[df['push内容'].astype(str).str.strip() != '']
+        # 数据清洗
+        update_task_status('push', session_id, message='开始数据清洗...')
+        df = df.dropna(subset=['标题', '摘要'], how='all')
         
+        # 初始化结果列
         df['审核结果'] = ''
-        df['违规标签'] = ''
+        df['低质标签'] = ''
         df['审核时间'] = ''
         
         total_rows = len(df)
-        update_task_status('push', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条push内容' % total_rows)
+        update_task_status('push', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条Push内容' % total_rows)
         
+        # 初始化会话ID
+        if session_id not in task_status['push']:
+            task_status['push'][session_id] = {'conversation_id': ''}
+        else:
+            task_status['push'][session_id]['conversation_id'] = ''
+        
+        # 逐行处理数据
         for index, row in df.iterrows():
             try:
+                # 检查是否暂停
                 while task_status['push'][session_id]['paused']:
                     time.sleep(0.5)
                     if task_status['push'][session_id]['status'] == 'idle':
                         return
                 
+                # 检查任务状态
                 if task_status['push'][session_id]['status'] != 'processing':
                     break
                 
+                # 更新进度
                 processed = index + 1
                 progress = int((processed / total_rows) * 100)
-                update_task_status('push', session_id, progress=progress, processed=processed, message='开始处理push内容 #%d/%d' % (index+1, total_rows))
+                update_task_status('push', session_id, progress=progress, processed=processed, 
+                                  message='开始处理Push #%d/%d' % (index+1, total_rows))
                 
-                push_content = row['push内容']
-                result, tags = process_push(push_content, api_key, session_id)
+                # 处理内容
+                title = str(row['标题']).strip()
+                summary = str(row['摘要']).strip()
+                result, tags = audit_content(title, summary, api_key, session_id)
                 
-                if len(tags) == 0 or (len(tags) == 1 and tags[0] == '/'):
-                    result = '正常'
-                    tags = []
-                
+                # 更新结果
                 df.at[index, '审核结果'] = result
-                df.at[index, '违规标签'] = ', '.join(tags) if tags else '/'
+                df.at[index, '低质标签'] = ', '.join(tags) if tags else '/'
                 df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 
+                # 更新统计
                 update_statistics('push', session_id, result, tags if tags else [])
                 
+                # 保存进度
                 result_path = get_result_path('push', session_id)
                 df.to_excel(result_path, index=False)
                 
-                update_task_status('push', session_id, message='push内容 #%d/%d 处理完成，结果: %s' % (index+1, total_rows, result), status='processing')
-                time.sleep(1)
+                # 添加间隔
+                time.sleep(0.5)
                 
             except Exception as e:
-                logger.error("push内容处理项目 #%d 错误: %s" % (index, str(e)))
-                update_task_status('push', session_id, message='push内容 #%d 处理异常: %s，继续处理下一项' % (index+1, str(e)), status='warning')
+                logger.error("Push处理错误: %s" % str(e))
+                update_task_status('push', session_id, message='Push #%d 处理异常: %s，继续处理下一项' % (index+1, str(e)), status='warning')
                 
+                # 更新结果为处理失败
                 df.at[index, '审核结果'] = '处理失败'
-                df.at[index, '违规标签'] = '/'
+                df.at[index, '低质标签'] = '/'
                 df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 
+                # 更新统计
                 update_statistics('push', session_id, '处理失败', [])
                 
+                # 保存当前结果
                 result_path = get_result_path('push', session_id)
                 df.to_excel(result_path, index=False)
                 
                 continue
         
+        # 保存最终结果
         result_path = get_result_path('push', session_id)
         df.to_excel(result_path, index=False)
         
-        update_task_status('push', session_id, status='done', progress=100, message='智慧push审核完成，请点击完成按钮')
+        # 更新任务状态
+        update_task_status('push', session_id, status='done', progress=100, message='智慧Push审核完成，请点击完成按钮')
+        
+        # 添加到历史记录
         add_to_history('push', session_id)
         
     except Exception as e:
-        logger.error("智慧push处理错误: %s" % str(e))
+        logger.error("Push处理错误: %s" % str(e))
         update_task_status('push', session_id, status='error', message='处理出错: %s' % str(e))
-
-def process_push(push_content, api_key, session_id):
-    """处理单条智慧push内容 - 适配新的API接口"""
-    max_retries = 3
-    retry_count = 0
-    api_timeout = (10, 3000)
-    
-    # 获取或初始化 conversation_id
-    conversation_id = task_status['push'][session_id].get('conversation_id', '')
-    
-    while retry_count < max_retries:
-        try:
-            data = {
-                "query": "请审核以下push内容是否违规，并给出审核结果和违规标签：\n\n%s" % push_content,
-                "inputs": {},
-                "response_mode": "blocking",
-                "user": "audit_system"
-            }
-            
-            # 如果存在 conversation_id，则添加到请求中
-            if conversation_id:
-                data["conversation_id"] = conversation_id
-            
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer %s" % api_key
-            }
-            
-            logger.info("push审核请求数据: %s" % json.dumps(data))
-            
-            response = requests.post(
-                API_URL, 
-                headers=headers, 
-                json=data, 
-                timeout=api_timeout
-            )
-            
-            logger.info("push审核响应状态: %d" % response.status_code)
-            
-            if response.status_code != 200:
-                logger.error("push审核响应错误: %s" % response.text)
-                if response.status_code == 501 and "conversation_id" in response.text:
-                    # 501错误通常表示conversation_id无效，清空后重试
-                    logger.warning("501错误，清空conversation_id并重试 (%d/%d)" % (retry_count, max_retries))
-                    task_status['push'][session_id]['conversation_id'] = '' # 清空无效的conversation_id
-                    conversation_id = ''
-                    retry_count += 1
-                    time.sleep(2)
-                    continue
-                response.raise_for_status()
-            
-            result_data = response.json()
-            assistant_message = result_data.get('answer', '')
-            
-            # 更新 conversation_id
-            new_conversation_id = result_data.get('conversation_id', '')
-            if new_conversation_id:
-                task_status['push'][session_id]['conversation_id'] = new_conversation_id
-                conversation_id = new_conversation_id
-            
-            result, tags = parse_audit_result(assistant_message)
-            
-            logger.info("push审核解析结果: %s, 标签: %s" % (result, tags))
-            return result, tags
-            
-        except requests.exceptions.Timeout as timeout_err:
-            retry_count += 1
-            timeout_type = "连接" if "connect" in str(timeout_err).lower() else "读取"
-            logger.error("API请求超时 (%s) (尝试 %d/%d): %s" % (timeout_type, retry_count, max_retries, str(timeout_err)))
-            
-            if retry_count >= max_retries:
-                logger.critical("API请求达到最大超时重试次数")
-                return '处理失败', []
-            
-            sleep_time = 2 ** retry_count
-            logger.info("将在 %d 秒后重试..." % sleep_time)
-            time.sleep(sleep_time)
-            
-        except requests.exceptions.RequestException as req_err:
-            retry_count += 1
-            logger.error("网络请求异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(req_err)))
-            
-            if retry_count >= max_retries:
-                return '处理失败', []
-            
-            time.sleep(2)
-            
-        except Exception as e:
-            retry_count += 1
-            logger.error("未处理的异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(e)))
-            
-            if retry_count >= max_retries:
-                return '处理失败', []
-            
-            time.sleep(2)
-    
-    return '处理失败', []
 
 # ===================== pro.py 引入部分 =====================
 
@@ -1438,3 +1494,4 @@ def process_brand_file(filename, api_key, session_id):
 # 确保Flask应用在直接运行时启动
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+    

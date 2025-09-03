@@ -1271,13 +1271,16 @@ def process_push_file(filename, api_key, session_id):
 # ===================== pro.py 引入部分 =====================
 
 # 速率限制相关配置 (从pro.py复制，并调整为全局变量)
-BRAND_RATE_LIMIT = 1.0          # 每秒请求数（严格遵循API限制）
-BRAND_BUCKET_CAPACITY = 2       # 令牌桶容量（突发容量）
-BRAND_MAX_RETRIES = 5           # 增加重试次数
-BRAND_INITIAL_DELAY = 0.5       # 初始延迟（秒）
-BRAND_BACKOFF_FACTOR = 2        # 指数退避因子
-BRAND_TIMEOUT = 1500            # 单次请求超时时间（秒）
+BRAND_RATE_LIMIT = 2.0          # 每秒请求数（严格遵循API限制）
+BRAND_BUCKET_CAPACITY = 5      # 令牌桶容量（突发容量）
+BRAND_MAX_RETRIES = 3           # 增加重试次数
+BRAND_INITIAL_DELAY = 0.3       # 初始延迟（秒）
+BRAND_BACKOFF_FACTOR = 1.5        # 指数退避因子
+BRAND_TIMEOUT = 300           # 单次请求超时时间（秒）
 BRAND_USER_ID = "Brand_AUDIT_BOT_003"
+
+# 增加批量处理大小，减少磁盘IO频率
+BRAND_BATCH_SAVE_SIZE = 100     # 每处理100条记录保存一次
 
 class BrandRateLimiter:
     """精确的令牌桶速率限制器 (从pro.py复制)"""
@@ -1417,8 +1420,10 @@ def process_brand_comment(args, api_key, session_id):
         logger.error("品牌守护处理异常: %s" % e)
         return index, "处理异常", str(e)[:50], 0
 
+
+# 优化品牌守护处理函数
 def process_brand_file(filename, api_key, session_id):
-    """处理品牌守护文件 - 适配app.py的框架"""
+    """处理品牌守护文件 - 性能优化版本"""
     try:
         update_task_status('brand', session_id, message='读取文件中...')
         df = pd.read_excel(filename, engine='openpyxl')
@@ -1437,54 +1442,73 @@ def process_brand_file(filename, api_key, session_id):
         total_rows = len(df)
         update_task_status('brand', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条品牌标题' % total_rows)
         
-        # 改为顺序处理，避免并发问题
-        processed_count = 0
+        # 使用线程池提高处理效率
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         
-        for index, row in df.iterrows():
-            try:
-                # 检查是否暂停
-                while task_status['brand'][session_id]['paused']:
-                    time.sleep(0.5)
-                    if task_status['brand'][session_id]['status'] == 'idle':
-                        return
-                
-                if task_status['brand'][session_id]['status'] != 'processing':
-                    break
-                
-                # 处理品牌标题
-                idx, result, tag, latency = process_brand_comment((index, row['品牌标题']), api_key, session_id)
-                df.at[idx, '审核结果'] = result
-                df.at[idx, '违规标签'] = tag
-                df.at[idx, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
-                processed_count += 1
-                progress = int((processed_count / total_rows) * 100)
-                update_task_status('brand', session_id, progress=progress, processed=processed_count, message='处理品牌标题 #%d/%d' % (processed_count, total_rows))
-                
-                # 更新统计
-                update_statistics('brand', session_id, result, [tag] if tag and tag != "解析失败" else [])
-                
-                # 每处理一定数量保存一次结果，确保不丢失进度
-                if processed_count % 50 == 0:
-                    result_path = get_result_path('brand', session_id)
-                    df.to_excel(result_path, index=False)
-                    logger.info("品牌守护：已保存中间结果到 %s" % result_path)
+        # 准备处理任务
+        tasks = [(index, row['品牌标题']) for index, row in df.iterrows()]
+        processed_count = 0
+        results = {}
+        
+        # 使用有限的线程池控制并发数
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            # 提交所有任务
+            future_to_index = {
+                executor.submit(process_brand_comment, task, api_key, session_id): task[0] 
+                for task in tasks
+            }
+            
+            # 处理完成的任务
+            for future in as_completed(future_to_index):
+                try:
+                    index = future_to_index[future]
+                    idx, result, tag, latency = future.result()
                     
-            except Exception as e:
-                logger.error("品牌守护结果处理异常：%s" % str(e))
-                df.at[index, '审核结果'] = '处理失败'
-                df.at[index, '违规标签'] = '/'
-                df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                update_statistics('brand', session_id, '处理失败', [])
-                processed_count += 1 # 即使失败也要更新processed_count
-                progress = int((processed_count / total_rows) * 100)
-                update_task_status('brand', session_id, progress=progress, processed=processed_count, message='处理品牌标题 #%d/%d 异常' % (processed_count, total_rows), status='warning')
+                    # 更新结果
+                    df.at[idx, '审核结果'] = result
+                    df.at[idx, '违规标签'] = tag
+                    df.at[idx, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    
+                    # 更新统计
+                    update_statistics('brand', session_id, result, [tag] if tag and tag != "解析失败" else [])
+                    
+                    processed_count += 1
+                    progress = int((processed_count / total_rows) * 100)
+                    
+                    # 减少状态更新频率，每10条更新一次
+                    if processed_count % 10 == 0:
+                        update_task_status('brand', session_id, progress=progress, 
+                                          processed=processed_count, 
+                                          message='已处理品牌标题 #%d/%d' % (processed_count, total_rows))
+                    
+                    # 减少磁盘IO频率，每BRAND_BATCH_SAVE_SIZE条保存一次
+                    if processed_count % BRAND_BATCH_SAVE_SIZE == 0:
+                        result_path = get_result_path('brand', session_id)
+                        df.to_excel(result_path, index=False)
+                        logger.info("品牌守护：已保存中间结果到 %s (进度: %d%%)" % (result_path, progress))
+                        
+                except Exception as e:
+                    logger.error("品牌守护结果处理异常：%s" % str(e))
+                    index = future_to_index[future]
+                    df.at[index, '审核结果'] = '处理失败'
+                    df.at[index, '违规标签'] = '/'
+                    df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    update_statistics('brand', session_id, '处理失败', [])
+                    processed_count += 1
+                    progress = int((processed_count / total_rows) * 100)
+                    
+                    if processed_count % 10 == 0:
+                        update_task_status('brand', session_id, progress=progress, 
+                                          processed=processed_count, 
+                                          message='处理品牌标题 #%d/%d 异常' % (processed_count, total_rows), 
+                                          status='warning')
 
         # 保存最终结果
         result_path = get_result_path('brand', session_id)
         df.to_excel(result_path, index=False)
         
-        update_task_status('brand', session_id, status='done', progress=100, message='品牌守护审核完成，请点击完成按钮')
+        update_task_status('brand', session_id, status='done', progress=100, 
+                          message='品牌守护审核完成，共处理 %d 条记录' % processed_count)
         add_to_history('brand', session_id)
         
     except Exception as e:

@@ -1268,22 +1268,20 @@ def process_push_file(filename, api_key, session_id):
         logger.error("Push处理错误: %s" % str(e))
         update_task_status('push', session_id, status='error', message='处理出错: %s' % str(e))
 
-# ===================== pro.py 引入部分 =====================
-
-# 速率限制相关配置 (从pro.py复制，并调整为全局变量)
+# ===================== 品牌守护任务配置 =====================
 BRAND_RATE_LIMIT = 2.0          # 每秒请求数（严格遵循API限制）
-BRAND_BUCKET_CAPACITY = 5      # 令牌桶容量（突发容量）
-BRAND_MAX_RETRIES = 3           # 增加重试次数
-BRAND_INITIAL_DELAY = 0.3       # 初始延迟（秒）
-BRAND_BACKOFF_FACTOR = 1.5        # 指数退避因子
-BRAND_TIMEOUT = 300           # 单次请求超时时间（秒）
+BRAND_BUCKET_CAPACITY = 5       # 令牌桶容量（突发容量）
+BRAND_MAX_RETRIES = 2           # 减少重试次数（原为3）
+BRAND_BACKOFF_FACTOR = 1.2      # 降低退避因子（原为1.5）
+BRAND_TIMEOUT = 300             # 单次请求超时时间（秒）
 BRAND_USER_ID = "Brand_AUDIT_BOT_003"
-
-# 增加批量处理大小，减少磁盘IO频率
 BRAND_BATCH_SAVE_SIZE = 100     # 每处理100条记录保存一次
 
+# 初始化品牌守护专用的速率限制器
+brand_rate_limiter = None  # 将在首次使用时初始化
+
 class BrandRateLimiter:
-    """精确的令牌桶速率限制器 (从pro.py复制)"""
+    """精确的令牌桶速率限制器（修复版）"""
     def __init__(self):
         self.tokens = BRAND_BUCKET_CAPACITY
         self.last_time = time.time()
@@ -1293,27 +1291,22 @@ class BrandRateLimiter:
         with self.lock:
             current_time = time.time()
             elapsed = current_time - self.last_time
-            
-            # 计算新增令牌
             self.tokens += elapsed * BRAND_RATE_LIMIT
             self.tokens = min(self.tokens, BRAND_BUCKET_CAPACITY)
             
-            # 判断可用令牌
             if self.tokens < 1.0:
                 deficit = 1.0 - self.tokens
                 sleep_time = deficit / BRAND_RATE_LIMIT
+                logger.info("品牌守护速率限制：等待%.2f秒" % sleep_time)
                 time.sleep(sleep_time)
                 self.tokens = 0.0
-                self.last_time = time.time() + sleep_time
+                self.last_time = time.time()  # 修复：睡眠结束后更新为当前时间
             else:
                 self.tokens -= 1.0
                 self.last_time = current_time
 
-# 初始化品牌守护专用的速率限制器
-brand_rate_limiter = BrandRateLimiter()
-
 def create_brand_retry_session():
-    """创建带指数退避的重试会话 (从pro.py复制，并重命名)"""
+    """创建带指数退避的重试会话"""
     session = requests.Session()
     
     retry_strategy = Retry(
@@ -1321,7 +1314,7 @@ def create_brand_retry_session():
         backoff_factor=BRAND_BACKOFF_FACTOR,
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods=['POST'],
-        respect_retry_after_header=True  # 遵守API返回的重试时间
+        respect_retry_after_header=True
     )
     
     adapter = HTTPAdapter(
@@ -1335,7 +1328,7 @@ def create_brand_retry_session():
     return session
 
 def sanitize_brand_comment(content):
-    """内容清洗（从pro.py复制，并重命名）"""
+    """内容清洗"""
     if pd.isnull(content):
         return ""
     
@@ -1347,7 +1340,7 @@ def sanitize_brand_comment(content):
     return cleaned[:2000]
 
 def parse_brand_audit_result(answer):
-    """结果解析（从pro.py复制，并重命名，注意与app.py原有parse_audit_result的区别）"""
+    """结果解析"""
     try:
         clean_answer = re.sub(r'[\n\r\s]+', ' ', answer.strip())
         
@@ -1374,7 +1367,11 @@ def parse_brand_audit_result(answer):
         return ("解析失败", "解析失败")
 
 def process_brand_comment(args, api_key, session_id):
-    """处理单个品牌守护评论（从pro.py复制，并重命名，适配app.py的参数）"""
+    """处理单个品牌守护评论"""
+    global brand_rate_limiter
+    if brand_rate_limiter is None:
+        brand_rate_limiter = BrandRateLimiter()
+    
     index, comment = args
     session = create_brand_retry_session()
     
@@ -1414,14 +1411,12 @@ def process_brand_comment(args, api_key, session_id):
         if e.response.status_code == 429:
             retry_after = e.response.headers.get('Retry-After', BRAND_BACKOFF_FACTOR)
             logger.warning("品牌守护触发速率限制，等待 %s 秒后重试..." % retry_after)
-            time.sleep(float(retry_after))
+            time.sleep(min(float(retry_after), 5.0))  # 最大等待5秒，避免过长
         return index, "HTTP错误", str(e)[:50], 0
     except Exception as e:
         logger.error("品牌守护处理异常: %s" % e)
         return index, "处理异常", str(e)[:50], 0
 
-
-# 优化品牌守护处理函数
 def process_brand_file(filename, api_key, session_id):
     """处理品牌守护文件 - 性能优化版本"""
     try:
@@ -1442,23 +1437,20 @@ def process_brand_file(filename, api_key, session_id):
         total_rows = len(df)
         update_task_status('brand', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条品牌标题' % total_rows)
         
-        # 使用线程池提高处理效率
+        # 使用线程池，但最大并发数降为1，避免触发API限制
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
         # 准备处理任务
         tasks = [(index, row['品牌标题']) for index, row in df.iterrows()]
         processed_count = 0
-        results = {}
         
-        # 使用有限的线程池控制并发数
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            # 提交所有任务
+        # 使用单线程处理，避免并发问题
+        with ThreadPoolExecutor(max_workers=1) as executor:
             future_to_index = {
                 executor.submit(process_brand_comment, task, api_key, session_id): task[0] 
                 for task in tasks
             }
             
-            # 处理完成的任务
             for future in as_completed(future_to_index):
                 try:
                     index = future_to_index[future]
@@ -1475,13 +1467,13 @@ def process_brand_file(filename, api_key, session_id):
                     processed_count += 1
                     progress = int((processed_count / total_rows) * 100)
                     
-                    # 减少状态更新频率，每10条更新一次
-                    if processed_count % 10 == 0:
+                    # 每10条更新一次状态
+                    if processed_count % 10 == 0 or processed_count == total_rows:
                         update_task_status('brand', session_id, progress=progress, 
                                           processed=processed_count, 
                                           message='已处理品牌标题 #%d/%d' % (processed_count, total_rows))
                     
-                    # 减少磁盘IO频率，每BRAND_BATCH_SAVE_SIZE条保存一次
+                    # 每100条保存一次中间结果
                     if processed_count % BRAND_BATCH_SAVE_SIZE == 0:
                         result_path = get_result_path('brand', session_id)
                         df.to_excel(result_path, index=False)

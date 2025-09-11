@@ -1,0 +1,20 @@
+{
+  "id": "70d567d9-1bb2-4531-bcb9-c6d3b787c583",
+  "audit_type": "push",
+  "datetime": "2025-09-08 18:41:03",
+  "result_path": "result\\push_70d567d9-1bb2-4531-bcb9-c6d3b787c583_result.xlsx",
+  "filename": "push_70d567d9-1bb2-4531-bcb9-c6d3b787c583.xlsx",
+  "total_rows": 10,
+  "statistics": {
+    "results": {
+      "低质": 8,
+      "正常": 2
+    },
+    "tags": {
+      "标题党": 5,
+      "文本低质": 4,
+      "低俗": 5
+    }
+  },
+  "status": "completed"
+}

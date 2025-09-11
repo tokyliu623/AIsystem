@@ -12,6 +12,7 @@ AI智能内容巡检系统 - 修复版
 4. 增加备用解析策略和错误处理机制
 5. 新增品牌守护审核功能，集成pro.py中的代码
 6. 修复push巡检功能，使其与"新增push巡检"版本保持一致
+7. 修复历史记录页中的巡检数量统计问题
 
 Python 2.7 兼容版本
 """
@@ -25,7 +26,8 @@ import pandas as pd
 import threading
 import logging
 import requests
-from datetime import datetime
+import csv
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template, send_file
 from werkzeug.utils import secure_filename
 from requests.adapters import HTTPAdapter
@@ -36,6 +38,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 MAX_RETRIES = 3  # 最大重试次数
 API_TIMEOUT = 3000  # API超时时间（秒）
 TIMEOUT = 3000 
+
+# 在文件顶部添加常量
+HISTORY_DIR = 'history'
+HISTORY_INDEX_FILE = os.path.join(HISTORY_DIR, 'index.json')
+os.makedirs(HISTORY_DIR, exist_ok=True)
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
@@ -136,15 +143,236 @@ def get_result_path(audit_type, session_id):
     task_id = get_task_id(audit_type, session_id)
     return os.path.join(RESULT_FOLDER, "%s_%s_result.xlsx" % (audit_type, task_id))
 
-def add_to_history(audit_type, session_id):
-    """添加到历史记录 - 使用传入的session_id而非Flask session"""
-    task_id = get_task_id(audit_type, session_id)
-    history_records.append({
-        'id': task_id,
-        'audit_type': audit_type,
-        'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'result_path': get_result_path(audit_type, session_id)
-    })
+# 修改 add_to_history 函数
+def add_to_history(audit_type, session_id, filename, total_rows, statistics):
+    """添加到历史记录 - 使用文件系统持久化存储"""
+    try:
+        task_id = get_task_id(audit_type, session_id)
+        result_path = get_result_path(audit_type, session_id)
+        
+        # 创建历史记录条目
+        history_entry = {
+            'id': task_id,
+            'audit_type': audit_type,
+            'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'result_path': result_path,
+            'filename': filename,
+            'total_rows': total_rows,
+            'statistics': statistics,
+            'status': 'completed'
+        }
+        
+        # 加载现有索引
+        history_index = []
+        if os.path.exists(HISTORY_INDEX_FILE):
+            try:
+                with open(HISTORY_INDEX_FILE, 'r', encoding='utf-8') as f:
+                    history_index = json.load(f)
+            except:
+                history_index = []
+        
+        # 添加新记录到索引
+        history_index.append(history_entry)
+        
+        # 保存索引
+        with open(HISTORY_INDEX_FILE, 'w', encoding='utf-8') as f:
+            json.dump(history_index, f, ensure_ascii=False, indent=2)
+            
+        # 同时保存详细记录到单独文件
+        history_file = os.path.join(HISTORY_DIR, f"{task_id}.json")
+        with open(history_file, 'w', encoding='utf-8') as f:
+            json.dump(history_entry, f, ensure_ascii=False, indent=2)
+            
+        return True
+    except Exception as e:
+        logger.error("保存历史记录失败: %s" % str(e))
+        return False   
+
+# 新增历史记录分页API
+@app.route('/history/page')
+def get_history_page():
+    """获取分页历史记录"""
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+        audit_type = request.args.get('audit_type', '')
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
+        
+        # 加载历史索引
+        if not os.path.exists(HISTORY_INDEX_FILE):
+            return jsonify({'history': [], 'total': 0, 'pages': 0})
+            
+        with open(HISTORY_INDEX_FILE, 'r', encoding='utf-8') as f:
+            all_history = json.load(f)
+        
+        # 过滤记录
+        filtered_history = []
+        for record in all_history:
+            # 按类型过滤
+            if audit_type and record['audit_type'] != audit_type:
+                continue
+                
+            # 按日期过滤
+            record_date = datetime.strptime(record['datetime'], '%Y-%m-%d %H:%M:%S')
+            if start_date:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                if record_date < start_dt:
+                    continue
+            if end_date:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+                if record_date >= end_dt:
+                    continue
+                    
+            filtered_history.append(record)
+        
+        # 按时间倒序排序
+        filtered_history.sort(key=lambda x: x['datetime'], reverse=True)
+        
+        # 分页
+        total = len(filtered_history)
+        pages = (total + per_page - 1) // per_page
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        paged_history = filtered_history[start_idx:end_idx]
+        
+        return jsonify({
+            'history': paged_history,
+            'total': total,
+            'pages': pages,
+            'page': page
+        })
+        
+    except Exception as e:
+        logger.error("获取分页历史记录错误: %s" % str(e))
+        return jsonify({'error': '获取历史记录失败: %s' % str(e)}), 500
+
+# 修复历史统计API - 添加巡检量级统计
+@app.route('/history/statistics')
+def get_history_statistics():
+    """获取历史统计信息 - 修复版，包含巡检量级统计"""
+    try:
+        # 加载历史索引
+        if not os.path.exists(HISTORY_INDEX_FILE):
+            return jsonify({
+                'by_type': {}, 
+                'by_date': {},
+                'by_volume': {}  # 新增巡检量级统计
+            })
+            
+        with open(HISTORY_INDEX_FILE, 'r', encoding='utf-8') as f:
+            all_history = json.load(f)
+        
+        # 按类型统计任务数量
+        by_type = {}
+        for record in all_history:
+            audit_type = record['audit_type']
+            if audit_type not in by_type:
+                by_type[audit_type] = 0
+            by_type[audit_type] += 1
+        
+        # 按类型统计巡检量级（total_rows）
+        by_volume = {}
+        for record in all_history:
+            audit_type = record['audit_type']
+            total_rows = record.get('total_rows', 0)
+            if audit_type not in by_volume:
+                by_volume[audit_type] = 0
+            by_volume[audit_type] += total_rows
+        
+        # 按日期统计（最近30天）
+        by_date = {}
+        today = datetime.now()
+        for i in range(30):
+            date_str = (today - timedelta(days=i)).strftime('%Y-%m-%d')
+            by_date[date_str] = 0
+            
+        for record in all_history:
+            record_date = datetime.strptime(record['datetime'], '%Y-%m-%d %H:%M:%S')
+            date_str = record_date.strftime('%Y-%m-%d')
+            if date_str in by_date:
+                by_date[date_str] += 1
+        
+        return jsonify({
+            'by_type': by_type,
+            'by_date': by_date,
+            'by_volume': by_volume  # 返回巡检量级统计
+        })
+        
+    except Exception as e:
+        logger.error("获取历史统计错误: %s" % str(e))
+        return jsonify({'error': '获取统计信息失败: %s' % str(e)}), 500
+
+# 新增导出历史记录API
+@app.route('/history/export')
+def export_history():
+    """导出历史记录"""
+    try:
+        export_format = request.args.get('format', 'json')
+        audit_type = request.args.get('audit_type', '')
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
+        
+        # 加载和过滤历史记录（同上）
+        if not os.path.exists(HISTORY_INDEX_FILE):
+            return jsonify({'error': '没有历史记录可导出'}), 404
+            
+        with open(HISTORY_INDEX_FILE, 'r', encoding='utf-8') as f:
+            all_history = json.load(f)
+        
+        filtered_history = []
+        for record in all_history:
+            if audit_type and record['audit_type'] != audit_type:
+                continue
+                
+            record_date = datetime.strptime(record['datetime'], '%Y-%m-%d %H:%M:%S')
+            if start_date:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                if record_date < start_dt:
+                    continue
+            if end_date:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+                if record_date >= end_dt:
+                    continue
+                    
+            filtered_history.append(record)
+        
+        # 根据格式导出
+        if export_format == 'json':
+            export_path = os.path.join(HISTORY_DIR, f"export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+            with open(export_path, 'w', encoding='utf-8') as f:
+                json.dump(filtered_history, f, ensure_ascii=False, indent=2)
+            return send_file(export_path, as_attachment=True)
+            
+        elif export_format == 'csv':
+            export_path = os.path.join(HISTORY_DIR, f"export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+            with open(export_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                # 写入标题行
+                writer.writerow(['ID', '任务类型', '执行时间', '文件名', '总行数', '正常数', '低质数', '处理失败数'])
+                
+                # 写入数据行
+                for record in filtered_history:
+                    stats = record.get('statistics', {})
+                    results = stats.get('results', {})
+                    writer.writerow([
+                        record['id'],
+                        record['audit_type'],
+                        record['datetime'],
+                        record.get('filename', ''),
+                        record.get('total_rows', 0),
+                        results.get('正常', 0),
+                        results.get('低质', 0),
+                        results.get('处理失败', 0)
+                    ])
+                    
+            return send_file(export_path, as_attachment=True)
+        else:
+            return jsonify({'error': '不支持的导出格式'}), 400
+            
+    except Exception as e:
+        logger.error("导出历史记录错误: %s" % str(e))
+        return jsonify({'error': '导出失败: %s' % str(e)}), 500
 
 @app.route('/')
 def index():
@@ -265,7 +493,7 @@ def run_task():
             thread = threading.Thread(target=process_push_file, args=(filename, api_key, session_id))
         elif audit_type == 'brand':
             thread = threading.Thread(target=process_brand_file, args=(filename, api_key, session_id))
-                
+        
         thread.daemon = True
         thread.start()
         
@@ -534,12 +762,16 @@ def process_comment_file(filename, api_key, session_id):
         # 更新任务状态
         update_task_status('comment', session_id, status='done', progress=100, message='评论审核完成，请点击完成按钮')
         
-        # 添加到历史记录
-        add_to_history('comment', session_id)
+        # 添加到历史记录      
+        add_to_history('comment', session_id, os.path.basename(filename), total_rows, 
+                      task_status['comment'][session_id]['statistics'])
         
     except Exception as e:
         logger.error("评论处理错误: %s" % str(e))
         update_task_status('comment', session_id, status='error', message='处理出错: %s' % str(e))
+        # 即使出错也记录历史
+        add_to_history('comment', session_id, os.path.basename(filename), total_rows, 
+                      task_status['comment'][session_id]['statistics'])   
 
 def process_cover_file(filename, api_key, session_id):
     """处理封面文件 - 使用传入的session_id而非Flask session"""
@@ -638,13 +870,17 @@ def process_cover_file(filename, api_key, session_id):
         
         # 更新任务状态
         update_task_status('cover', session_id, status='done', progress=100, message='封面审核完成，请点击完成按钮')
-        
-        # 添加到历史记录
-        add_to_history('cover', session_id)
+      
+        # 在函数末尾，修改 add_to_history 调用
+        add_to_history('cover', session_id, os.path.basename(filename), total_rows, 
+                      task_status['cover'][session_id]['statistics'])
         
     except Exception as e:
         logger.error("封面处理错误: %s" % str(e))
         update_task_status('cover', session_id, status='error', message='处理出错: %s' % str(e))
+        # 即使出错也记录历史
+        add_to_history('cover', session_id, os.path.basename(filename), total_rows, 
+                      task_status['cover'][session_id]['statistics'])
 
 def process_comment(comment, api_key):
     """处理单条评论 - 修复版本，解决API结果解析问题
@@ -738,7 +974,7 @@ def process_comment(comment, api_key):
             time.sleep(2)
             
         except Exception as e:
-            # 处理其他所有异常
+            # 处理其他未预期的异常
             retry_count += 1
             logger.error("未处理的异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(e)))
             
@@ -747,36 +983,24 @@ def process_comment(comment, api_key):
             
             time.sleep(2)
     
-    # 所有重试失败后的默认返回
     return '处理失败', []
 
-
 def parse_audit_result(assistant_message):
-    """解析审核结果 - 修复版本，支持多种格式
+    """解析审核结果 - 修复版本，支持多种格式和增强错误处理
     
-    支持的格式：
-    1. 带编号格式：（1）审核结果：正常 （2）低质标签：/
-    2. 不带编号格式：审核结果：正常 低质标签：/
-    3. 混合格式和各种变体
-    
-    Args:
-        assistant_message (str): API返回的完整消息
-        
-    Returns:
-        tuple: (审核结果, 标签列表)
+    修复内容：
+    1. 过滤think标签内容，只解析实际结果
+    2. 支持多种API返回格式（带编号和不带编号）
+    3. 增加备用解析策略
+    4. 增强错误处理机制
     """
-    # 初始化默认值
-    result = "处理失败"
+    result = "解析失败"
     tags = []
     
     try:
-        # 第一步：过滤think标签内容，只保留实际结果部分
-        # 移除<think>...</think>标签及其内容
+        # 第一步：过滤think标签内容
         think_pattern = r'<think>.*?</think>'
-        filtered_message = re.sub(think_pattern, '', assistant_message, flags=re.DOTALL)
-        
-        # 清理多余的空白字符
-        filtered_message = filtered_message.strip()
+        filtered_message = re.sub(think_pattern, '', assistant_message, flags=re.DOTALL).strip()
         
         logger.info("过滤think标签后的内容: %s" % filtered_message)
         
@@ -1116,7 +1340,7 @@ def create_retry_session():
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)
-    session.mount('https://', adapter)
+    session.mount('https', adapter)
     return session
 
 def audit_content(title, summary, api_key, session_id):
@@ -1195,7 +1419,7 @@ def process_push_file(filename, api_key, session_id):
         if session_id not in task_status['push']:
             task_status['push'][session_id] = {'conversation_id': ''}
         else:
-            task_status['push'][session_id]['conversation_id'] = ''
+            task_status['push'][session_id]['conversation'] = ''
         
         # 逐行处理数据
         for index, row in df.iterrows():
@@ -1262,252 +1486,176 @@ def process_push_file(filename, api_key, session_id):
         update_task_status('push', session_id, status='done', progress=100, message='智慧Push审核完成，请点击完成按钮')
         
         # 添加到历史记录
-        add_to_history('push', session_id)
+        add_to_history('push', session_id, os.path.basename(filename), total_rows, 
+                      task_status['push'][session_id]['statistics'])
         
     except Exception as e:
         logger.error("Push处理错误: %s" % str(e))
         update_task_status('push', session_id, status='error', message='处理出错: %s' % str(e))
+        # 即使出错也记录历史
+        add_to_history('push', session_id, os.path.basename(filename), total_rows, 
+                      task_status['push'][session_id]['statistics'])
 
-# ===================== 品牌守护任务配置 =====================
-BRAND_RATE_LIMIT = 2.0          # 每秒请求数（严格遵循API限制）
-BRAND_BUCKET_CAPACITY = 5       # 令牌桶容量（突发容量）
-BRAND_MAX_RETRIES = 2           # 减少重试次数（原为3）
-BRAND_BACKOFF_FACTOR = 1.2      # 降低退避因子（原为1.5）
-BRAND_TIMEOUT = 300             # 单次请求超时时间（秒）
-BRAND_USER_ID = "Brand_AUDIT_BOT_003"
-BRAND_BATCH_SAVE_SIZE = 100     # 每处理100条记录保存一次
-
-# 初始化品牌守护专用的速率限制器
-brand_rate_limiter = None  # 将在首次使用时初始化
-
-class BrandRateLimiter:
-    """精确的令牌桶速率限制器（修复版）"""
-    def __init__(self):
-        self.tokens = BRAND_BUCKET_CAPACITY
-        self.last_time = time.time()
-        self.lock = Lock()
-
-    def acquire(self):
-        with self.lock:
-            current_time = time.time()
-            elapsed = current_time - self.last_time
-            self.tokens += elapsed * BRAND_RATE_LIMIT
-            self.tokens = min(self.tokens, BRAND_BUCKET_CAPACITY)
-            
-            if self.tokens < 1.0:
-                deficit = 1.0 - self.tokens
-                sleep_time = deficit / BRAND_RATE_LIMIT
-                logger.info("品牌守护速率限制：等待%.2f秒" % sleep_time)
-                time.sleep(sleep_time)
-                self.tokens = 0.0
-                self.last_time = time.time()  # 修复：睡眠结束后更新为当前时间
-            else:
-                self.tokens -= 1.0
-                self.last_time = current_time
-
-def create_brand_retry_session():
-    """创建带指数退避的重试会话"""
-    session = requests.Session()
-    
-    retry_strategy = Retry(
-        total=BRAND_MAX_RETRIES,
-        backoff_factor=BRAND_BACKOFF_FACTOR,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=['POST'],
-        respect_retry_after_header=True
-    )
-    
-    adapter = HTTPAdapter(
-        max_retries=retry_strategy,
-        pool_connections=20,
-        pool_maxsize=100
-    )
-    
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-    return session
-
-def sanitize_brand_comment(content):
-    """内容清洗"""
-    if pd.isnull(content):
-        return ""
-    
-    cleaned = re.sub(
-        r'[\x00-\x1F\\\"{}<>|]|(http[s]?://\S+)',
-        '',
-        str(content).strip()
-    )
-    return cleaned[:2000]
-
-def parse_brand_audit_result(answer):
-    """结果解析"""
-    try:
-        clean_answer = re.sub(r'[\n\r\s]+', ' ', answer.strip())
-        
-        pattern = re.compile(
-            r'（1）审核结果[：:]\s*([^（]+?)\s*'
-            r'（2）违规标签[：:]\s*([^）]+)'
-        )
-        match = pattern.search(clean_answer)
-        if match:
-            audit_result = match.group(1).strip()
-            violation_tag = match.group(2).strip()
-        else:
-            audit_result = re.search(r'审核结果[：:]\s*(.*?)(?=\s*（2）|$)', clean_answer)
-            violation_tag = re.search(r'违规标签[：:]\s*(.*?)$', clean_answer)
-            audit_result = audit_result.group(1).strip() if audit_result else "未知"
-            violation_tag = violation_tag.group(1).strip() if violation_tag else "未知"
-
-        def clean_text(text):
-            return re.sub(r'[^\u4e00-\u9fa5a-zA-Z0-9\s]', '', text)[:20]
-
-        return clean_text(audit_result), clean_text(violation_tag)
-    except Exception as e:
-        logger.error("[品牌守护解析异常] 原始响应：%s... 错误: %s" % (answer[:200], e))
-        return ("解析失败", "解析失败")
-
-def process_brand_comment(args, api_key, session_id):
-    """处理单个品牌守护评论"""
-    global brand_rate_limiter
-    if brand_rate_limiter is None:
-        brand_rate_limiter = BrandRateLimiter()
-    
-    index, comment = args
-    session = create_brand_retry_session()
-    
-    try:
-        # 速率控制
-        brand_rate_limiter.acquire()
-        
-        # 准备请求
-        headers = {
-            "Authorization": "Bearer %s" % api_key,
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "query": sanitize_brand_comment(comment),
-            "inputs": {},
-            "user": BRAND_USER_ID,
-            "response_mode": "blocking"
-        }
-        
-        # 发送请求
-        start_time = time.time()
-        response = session.post(
-            API_URL,
-            headers=headers,
-            json=payload,
-            timeout=BRAND_TIMEOUT
-        )
-        response.raise_for_status()
-        
-        # 处理结果
-        audit_res, tag = parse_brand_audit_result(response.json().get("answer", ""))
-        return index, audit_res, tag, time.time() - start_time
-        
-    except requests.exceptions.HTTPError as e:
-        logger.error("品牌守护HTTP错误: %d - %s" % (e.response.status_code, e.response.text[:100]))
-        if e.response.status_code == 429:
-            retry_after = e.response.headers.get('Retry-After', BRAND_BACKOFF_FACTOR)
-            logger.warning("品牌守护触发速率限制，等待 %s 秒后重试..." % retry_after)
-            time.sleep(min(float(retry_after), 5.0))  # 最大等待5秒，避免过长
-        return index, "HTTP错误", str(e)[:50], 0
-    except Exception as e:
-        logger.error("品牌守护处理异常: %s" % e)
-        return index, "处理异常", str(e)[:50], 0
+# ================ 品牌守护审核功能 ================
 
 def process_brand_file(filename, api_key, session_id):
-    """处理品牌守护文件 - 性能优化版本"""
+    """处理品牌守护文件"""
     try:
+        # 读取Excel文件
         update_task_status('brand', session_id, message='读取文件中...')
         df = pd.read_excel(filename, engine='openpyxl')
         
+        # 检查必要的列
         if '品牌标题' not in df.columns:
             update_task_status('brand', session_id, status='error', message='文件格式错误：缺少"品牌标题"列')
             return
         
+        # 数据清洗
+        update_task_status('brand', session_id, message='开始数据清洗...')
         df = df.dropna(subset=['品牌标题'])
         df = df[df['品牌标题'].astype(str).str.strip() != '']
         
+        # 初始化结果列
         df['审核结果'] = ''
         df['违规标签'] = ''
         df['审核时间'] = ''
         
         total_rows = len(df)
-        update_task_status('brand', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条品牌标题' % total_rows)
+        update_task_status('brand', session_id, total=total_rows, message='数据准备完成，开始处理 %d 条品牌内容' % total_rows)
         
-        # 使用线程池，但最大并发数降为1，避免触发API限制
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        # 逐行处理数据
+        for index, row in df.iterrows():
+            try:
+                # 检查是否暂停
+                while task_status['brand'][session_id]['paused']:
+                    time.sleep(0.5)
+                    if task_status['brand'][session_id]['status'] == 'idle':
+                        return
+                
+                # 检查任务状态
+                if task_status['brand'][session_id]['status'] != 'processing':
+                    break
+                
+                # 更新进度
+                processed = index + 1
+                progress = int((processed / total_rows) * 100)
+                update_task_status('brand', session_id, progress=progress, processed=processed, 
+                                  message='开始处理品牌内容 #%d/%d' % (index+1, total_rows))
+                
+                # 处理内容
+                content = row['品牌标题']
+                result, tags = process_brand_content(content, api_key)
+                
+                # 更新结果
+                df.at[index, '审核结果'] = result
+                df.at[index, '违规标签'] = ', '.join(tags) if tags else '/'
+                df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 更新统计
+                update_statistics('brand', session_id, result, tags if tags else [])
+                
+                # 保存进度
+                result_path = get_result_path('brand', session_id)
+                df.to_excel(result_path, index=False)
+                
+                # 添加间隔
+                time.sleep(0.5)
+                
+            except Exception as e:
+                logger.error("品牌守护处理错误: %s" % str(e))
+                update_task_status('brand', session_id, message='品牌内容 #%d 处理异常: %s，继续处理下一项' % (index+1, str(e)), status='warning')
+                
+                # 更新结果为处理失败
+                df.at[index, '审核结果'] = '处理失败'
+                df.at[index, '违规标签'] = '/'
+                df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 更新统计
+                update_statistics('brand', session_id, '处理失败', [])
+                
+                # 保存当前结果
+                result_path = get_result_path('brand', session_id)
+                df.to_excel(result_path, index=False)
+                
+                continue
         
-        # 准备处理任务
-        tasks = [(index, row['品牌标题']) for index, row in df.iterrows()]
-        processed_count = 0
-        
-        # 使用单线程处理，避免并发问题
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future_to_index = {
-                executor.submit(process_brand_comment, task, api_key, session_id): task[0] 
-                for task in tasks
-            }
-            
-            for future in as_completed(future_to_index):
-                try:
-                    index = future_to_index[future]
-                    idx, result, tag, latency = future.result()
-                    
-                    # 更新结果
-                    df.at[idx, '审核结果'] = result
-                    df.at[idx, '违规标签'] = tag
-                    df.at[idx, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    
-                    # 更新统计
-                    update_statistics('brand', session_id, result, [tag] if tag and tag != "解析失败" else [])
-                    
-                    processed_count += 1
-                    progress = int((processed_count / total_rows) * 100)
-                    
-                    # 每10条更新一次状态
-                    if processed_count % 10 == 0 or processed_count == total_rows:
-                        update_task_status('brand', session_id, progress=progress, 
-                                          processed=processed_count, 
-                                          message='已处理品牌标题 #%d/%d' % (processed_count, total_rows))
-                    
-                    # 每100条保存一次中间结果
-                    if processed_count % BRAND_BATCH_SAVE_SIZE == 0:
-                        result_path = get_result_path('brand', session_id)
-                        df.to_excel(result_path, index=False)
-                        logger.info("品牌守护：已保存中间结果到 %s (进度: %d%%)" % (result_path, progress))
-                        
-                except Exception as e:
-                    logger.error("品牌守护结果处理异常：%s" % str(e))
-                    index = future_to_index[future]
-                    df.at[index, '审核结果'] = '处理失败'
-                    df.at[index, '违规标签'] = '/'
-                    df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    update_statistics('brand', session_id, '处理失败', [])
-                    processed_count += 1
-                    progress = int((processed_count / total_rows) * 100)
-                    
-                    if processed_count % 10 == 0:
-                        update_task_status('brand', session_id, progress=progress, 
-                                          processed=processed_count, 
-                                          message='处理品牌标题 #%d/%d 异常' % (processed_count, total_rows), 
-                                          status='warning')
-
         # 保存最终结果
         result_path = get_result_path('brand', session_id)
         df.to_excel(result_path, index=False)
         
-        update_task_status('brand', session_id, status='done', progress=100, 
-                          message='品牌守护审核完成，共处理 %d 条记录' % processed_count)
-        add_to_history('brand', session_id)
+        # 更新任务状态
+        update_task_status('brand', session_id, status='done', progress=100, message='品牌守护审核完成，请点击完成按钮')
+        
+        # 添加到历史记录
+        add_to_history('brand', session_id, os.path.basename(filename), total_rows, 
+                      task_status['brand'][session_id]['statistics'])
         
     except Exception as e:
         logger.error("品牌守护处理错误: %s" % str(e))
         update_task_status('brand', session_id, status='error', message='处理出错: %s' % str(e))
+        # 即使出错也记录历史
+        add_to_history('brand', session_id, os.path.basename(filename), total_rows, 
+                      task_status['brand'][session_id]['statistics'])
 
-# 确保Flask应用在直接运行时启动
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+def process_brand_content(content, api_key):
+    """处理单条品牌内容"""
+    max_retries = 3
+    retry_count = 0
+    api_timeout = (10, 3000)
     
+    while retry_count < max_retries:
+        try:
+            # 构建请求数据
+            data = {
+                "query": "请审核以下内容是否存在品牌违规问题，并给出审核结果和违规标签：\n\n%s" % content,
+                "inputs": {},
+                "response_mode": "blocking",
+                "user": "brand_audit_system"
+            }
+            
+            # 发送请求
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer %s" % api_key
+            }
+            
+            response = requests.post(
+                API_URL, 
+                headers=headers, 
+                json=data, 
+                timeout=api_timeout
+            )
+            
+            if response.status_code != 200:
+                if response.status_code == 501 and "conversation_id" in response.text:
+                    retry_count += 1
+                    time.sleep(2)
+                    continue
+                response.raise_for_status()
+            
+            # 解析响应
+            result_data = response.json()
+            assistant_message = result_data.get('answer', '')
+            
+            # 解析API返回结果
+            result, tags = parse_audit_result(assistant_message)
+            
+            return result, tags
+            
+        except requests.exceptions.Timeout:
+            retry_count += 1
+            if retry_count >= max_retries:
+                return '处理失败', []
+            time.sleep(2 ** retry_count)
+            
+        except Exception as e:
+            retry_count += 1
+            if retry_count >= max_retries:
+                return '处理失败', []
+            time.sleep(2)
+    
+    return '处理失败', []
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
+

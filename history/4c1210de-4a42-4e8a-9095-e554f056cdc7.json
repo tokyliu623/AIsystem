@@ -1,0 +1,18 @@
+{
+  "id": "4c1210de-4a42-4e8a-9095-e554f056cdc7",
+  "audit_type": "cover",
+  "datetime": "2025-09-10 09:24:00",
+  "result_path": "result\\cover_4c1210de-4a42-4e8a-9095-e554f056cdc7_result.xlsx",
+  "filename": "cover_4c1210de-4a42-4e8a-9095-e554f056cdc7.xlsx",
+  "total_rows": 10,
+  "statistics": {
+    "results": {
+      "违规": 2,
+      "正常": 8
+    },
+    "tags": {
+      "低俗": 2
+    }
+  },
+  "status": "completed"
+}

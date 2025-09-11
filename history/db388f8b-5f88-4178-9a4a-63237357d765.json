@@ -1,0 +1,19 @@
+{
+  "id": "db388f8b-5f88-4178-9a4a-63237357d765",
+  "audit_type": "brand",
+  "datetime": "2025-09-10 09:20:29",
+  "result_path": "result\\brand_db388f8b-5f88-4178-9a4a-63237357d765_result.xlsx",
+  "filename": "brand_db388f8b-5f88-4178-9a4a-63237357d765.xlsx",
+  "total_rows": 9,
+  "statistics": {
+    "results": {
+      "违规": 9
+    },
+    "tags": {
+      "品牌负向": 7,
+      "品牌负向涉vivo产品缺陷": 1,
+      "用户负面体验涉vivo产品缺陷": 1
+    }
+  },
+  "status": "completed"
+}

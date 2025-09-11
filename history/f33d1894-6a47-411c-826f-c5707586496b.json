@@ -1,0 +1,19 @@
+{
+  "id": "f33d1894-6a47-411c-826f-c5707586496b",
+  "audit_type": "comment",
+  "datetime": "2025-09-08 18:40:20",
+  "result_path": "result\\comment_f33d1894-6a47-411c-826f-c5707586496b_result.xlsx",
+  "filename": "comment_f33d1894-6a47-411c-826f-c5707586496b.xlsx",
+  "total_rows": 10,
+  "statistics": {
+    "results": {
+      "低质": 6,
+      "正常": 4
+    },
+    "tags": {
+      "涉政": 4,
+      "谩骂": 2
+    }
+  },
+  "status": "completed"
+}

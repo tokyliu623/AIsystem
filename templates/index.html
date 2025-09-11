@@ -157,7 +157,8 @@
         }
         
         input[type="text"],
-        input[type="file"] {
+        input[type="file"],
+        input[type="date"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
@@ -374,6 +375,143 @@
             background-position: center;
         }
         
+        /* 历史记录页面的新增样式 */
+        .history-stats {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* 新增时间筛选器样式 */
+        .time-filter {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .filter-group label {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #4a90e2;
+            background: white;
+            color: #4a90e2;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-filter-btn.active,
+        .quick-filter-btn:hover {
+            background: #4a90e2;
+            color: white;
+        }
+        
+        /* 修改后的统计表格样式 */
+        .stats-table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .stats-table th,
+        .stats-table td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stats-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .stats-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .stats-table tr:hover {
+            background-color: #e9ecef;
+        }
+        
+        .stats-table .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+        
+        .stats-table .stats-header {
+            background-color: #4a90e2;
+            color: white;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 10px;
+        }
+        
+        .pagination-info {
+            margin: 0 15px;
+            color: #6c757d;
+        }
+        
+        /* 调整导出按钮位置 - 移到图表下方 */
+        .export-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .export-section h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #4a90e2;
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
         /* 版权信息 */
         footer {
             margin-top: 30px;
@@ -415,11 +553,29 @@
             .tab.active {
                 border-radius: 4px 4px 0 0;
             }
+            
+            .stats-table th,
+            .stats-table td {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+            
+            .stats-table .value {
+                font-size: 16px;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- HTML结构保持不变 -->
     <header>
         <h1><span class="ai-icon"></span>AI智能内容巡检系统<span class="ai-badge">智能分析</span></h1>
     </header>  
@@ -674,12 +830,127 @@
         <!-- 历史记录标签页 -->
         <div id="history-tab" class="tab-content">
             <h3>历史审核记录</h3>
+            
+            <!-- 新增时间筛选器 -->
+            <div class="time-filter">
+                <h4>时间筛选</h4>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="start-date">开始日期</label>
+                        <input type="date" id="start-date">
+                    </div>
+                    <div class="filter-group">
+                        <label for="end-date">结束日期</label>
+                        <input type="date" id="end-date">
+                    </div>
+                    <div class="filter-group">
+                        <label>快速选择</label>
+                        <div class="filter-buttons">
+                            <button class="quick-filter-btn active" data-days="7">最近一周</button>
+                            <button class="quick-filter-btn" data-days="30">最近一月</button>
+                            <button class="quick-filter-btn" data-days="90">最近三月</button>
+                            <button class="quick-filter-btn" data-days="0">全部</button>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <button id="apply-filter" class="btn-primary">应用筛选</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 统计信息 -->
+            <div class="history-stats">
+                <h4>任务统计</h4>
+                
+                <!-- 任务统计表格 -->
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr class="stats-header">
+                                <th>统计指标</th>
+                                <th>总任务数</th>
+                                <th>评论审核</th>
+                                <th>封面审核</th>
+                                <th>Push审核</th>
+                                <th>品牌守护</th>
+                                <!-- 预留位置给未来新增的审核类型 -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>任务数量</td>
+                                <td><div class="value" id="stats-total">0</div></td>
+                                <td><div class="value" id="stats-comment">0</div></td>
+                                <td><div class="value" id="stats-cover">0</div></td>
+                                <td><div class="value" id="stats-push">0</div></td>
+                                <td><div class="value" id="stats-brand">0</div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 修复巡检量级统计表格 -->
+                <h4>巡检量级统计</h4>
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr class="stats-header">
+                                <th>统计指标</th>
+                                <th>总巡检量</th>
+                                <th>评论审核</th>
+                                <th>封面审核</th>
+                                <th>Push审核</th>
+                                <th>品牌守护</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>巡检数量</td>
+                                <td><div class="value" id="volume-total">0</div></td>
+                                <td><div class="value" id="volume-comment">0</div></td>
+                                <td><div class="value" id="volume-cover">0</div></td>
+                                <td><div class="value" id="volume-push">0</div></td>
+                                <td><div class="value" id="volume-brand">0</div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart">
+                        <h4>任务类型分布</h4>
+                        <canvas id="history-type-chart"></canvas>
+                    </div>
+                    <div class="chart">
+                        <h4>任务时间分布(最近30天)</h4>
+                        <canvas id="history-date-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 调整导出按钮位置 - 移到独立区域 -->
+            <div class="export-section">
+                <h4>数据导出</h4>
+                <div class="export-options">
+                    <button id="history-export-json" class="btn-info">导出JSON</button>
+                    <button id="history-export-csv" class="btn-info">导出CSV</button>
+                </div>
+            </div>
+            
+            <!-- 历史记录列表 -->
             <div id="history-list"></div>
+            
+            <!-- 分页控件 -->
+            <div class="pagination">
+                <button id="history-prev-page" class="btn-info" disabled>上一页</button>
+                <span class="pagination-info" id="history-page-info">第 1 页，共 1 页</span>
+                <button id="history-next-page" class="btn-info" disabled>下一页</button>
+            </div>
         </div>
         
         <!-- 版权信息 -->
         <footer>
-            Copyright © 2025 互联网测试中心. All rights reserved. Version v1.0.0
+            Copyright © 2025 互联网测试中心. All rights reserved. Version v1.0.2
         </footer>
     </div>
    
@@ -714,66 +985,192 @@
                     });
                     document.getElementById(`${tabName}-tab`).classList.add('active');
                     
-                    // 如果切换到历史记录标签页，加载历史数据
+                    // 如果切换到历史记录页，加载数据
                     if (tabName === 'history') {
-                        loadHistoryData();
+                        initializeHistoryPage();
                     }
                 });
             });
-        
-            // 文件上传处理
-            setupFileUpload('comment');
-            setupFileUpload('cover');
-            setupFileUpload('push');
-            setupFileUpload('brand');
             
-            // 按钮事件处理（修复了push类型）
-            setupButtonEvents('comment');
-            setupButtonEvents('cover');
-            setupButtonEvents('push');  // 修复：这里原来是setupFileUpload('push')
-            setupButtonEvents('brand');
+            // 历史记录分页变量
+            let currentHistoryPage = 1;
+            let totalHistoryPages = 1;
+            const historyPerPage = 10;
             
-            // 初始化状态检查
-            checkStatus('comment');
-            checkStatus('cover');
-            checkStatus('push');
-            checkStatus('brand');
+            // 时间筛选变量
+            let currentStartDate = '';
+            let currentEndDate = '';
             
-            // 定时刷新状态
-            setInterval(() => {
-                if (document.getElementById('comment-tab').classList.contains('active')) {
-                    checkStatus('comment');
-                } else if (document.getElementById('cover-tab').classList.contains('active')) {
-                    checkStatus('cover');
-                } else if (document.getElementById('push-tab').classList.contains('active')) {
-                    checkStatus('push');
-                } else if (document.getElementById('brand-tab').classList.contains('active')) {
-                    checkStatus('brand');
-                }
-            }, 1000);
-
             // 生成UUID函数
             function generateUUID() {
                 return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
                     return v.toString(16);
                 });
             }
             
-            // 设置文件上传
-            function setupFileUpload(type) {
-                const fileInput = document.getElementById(`${type}-file`);
-                const fileNameDisplay = document.getElementById(`${type}-file-name`);
-                const startButton = document.getElementById(`${type}-start-btn`);
-                const apiKeyInput = document.getElementById(`${type}-api-key`);
+            // 初始化历史记录页面
+            function initializeHistoryPage() {
+                // 设置默认时间范围（最近一周）
+                setDefaultTimeRange();
                 
-                fileInput.addEventListener('change', (e) => {
-                    if (e.target.files.length > 0) {
-                        const file = e.target.files[0];
-                        fileNameDisplay.textContent = file.name;
+                // 初始化时间筛选器事件
+                initializeTimeFilter();
+                
+                // 加载数据
+                loadHistoryData(1);
+                loadHistoryStatistics();
+            }
+            
+            // 设置默认时间范围（最近一周）
+            function setDefaultTimeRange() {
+                const today = new Date();
+                const oneWeekAgo = new Date(today);
+                oneWeekAgo.setDate(today.getDate() - 7);
+                
+                const startDateInput = document.getElementById('start-date');
+                const endDateInput = document.getElementById('end-date');
+                
+                startDateInput.value = formatDate(oneWeekAgo);
+                endDateInput.value = formatDate(today);
+                
+                currentStartDate = startDateInput.value;
+                currentEndDate = endDateInput.value;
+            }
+            
+            // 格式化日期为YYYY-MM-DD
+            function formatDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            
+            // 初始化时间筛选器事件
+            function initializeTimeFilter() {
+                // 快速筛选按钮事件
+                const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
+                quickFilterBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        // 更新按钮状态
+                        quickFilterBtns.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
                         
-                        // 立即启用开始按钮（如果API密钥已填写）
-                        if (apiKeyInput.value.trim() !== '') {
+                        const days = parseInt(this.getAttribute('data-days'));
+                        const today = new Date();
+                        const startDateInput = document.getElementById('start-date');
+                        const endDateInput = document.getElementById('end-date');
+                        
+                        if (days === 0) {
+                            // 全部时间
+                            startDateInput.value = '';
+                            endDateInput.value = '';
+                        } else {
+                            const startDate = new Date(today);
+                            startDate.setDate(today.getDate() - days);
+                            
+                            startDateInput.value = formatDate(startDate);
+                            endDateInput.value = formatDate(today);
+                        }
+                        
+                        // 自动应用筛选
+                        applyTimeFilter();
+                    });
+                });
+                
+                // 应用筛选按钮事件
+                document.getElementById('apply-filter').addEventListener('click', applyTimeFilter);
+                
+                // 日期输入框变化事件
+                document.getElementById('start-date').addEventListener('change', updateQuickFilterState);
+                document.getElementById('end-date').addEventListener('change', updateQuickFilterState);
+            }
+            
+            // 更新快速筛选按钮状态
+            function updateQuickFilterState() {
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+                const today = formatDate(new Date());
+                
+                // 清除所有按钮的active状态
+                const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
+                quickFilterBtns.forEach(btn => btn.classList.remove('active'));
+                
+                // 检查是否匹配某个快速筛选
+                if (!startDate && !endDate) {
+                    document.querySelector('[data-days="0"]').classList.add('active');
+                } else if (endDate === today) {
+                    const daysDiff = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
+                    const matchingBtn = document.querySelector(`[data-days="${daysDiff}"]`);
+                    if (matchingBtn) {
+                        matchingBtn.classList.add('active');
+                    }
+                }
+            }
+            
+            // 应用时间筛选
+            function applyTimeFilter() {
+                currentStartDate = document.getElementById('start-date').value;
+                currentEndDate = document.getElementById('end-date').value;
+                
+                // 重新加载数据
+                currentHistoryPage = 1;
+                loadHistoryData(1);
+                loadHistoryStatistics();
+            }
+            
+            // 显示状态消息
+            function showStatusMessage(type, message, status = 'info') {
+                const messageElement = document.getElementById(`${type}-status-message`);
+                messageElement.textContent = message;
+                
+                // 清除所有状态类
+                messageElement.classList.remove('error', 'success', 'warning');
+                
+                // 添加对应状态类
+                if (status === 'error') {
+                    messageElement.classList.add('error');
+                } else if (status === 'success') {
+                    messageElement.classList.add('success');
+                } else if (status === 'warning') {
+                    messageElement.classList.add('warning');
+                }
+            }
+            
+            // 初始化所有审核类型
+            const auditTypes = ['comment', 'cover', 'push', 'brand'];
+            auditTypes.forEach(type => {
+                initializeAuditType(type);
+                
+                // 启动状态检查定时器
+                setInterval(() => {
+                    checkStatus(type);
+                }, 2000);
+            });
+            
+            // 初始化审核类型
+            function initializeAuditType(type) {
+                // 文件上传处理
+                const fileInput = document.getElementById(`${type}-file`);
+                const fileName = document.getElementById(`${type}-file-name`);
+                const startButton = document.getElementById(`${type}-start-btn`);
+                const pauseButton = document.getElementById(`${type}-pause-btn`);
+                const resumeButton = document.getElementById(`${type}-resume-btn`);
+                const finishButton = document.getElementById(`${type}-finish-btn`);
+                const endButton = document.getElementById(`${type}-end-btn`);
+                const analyzeButton = document.getElementById(`${type}-analyze-btn`);
+                const downloadButton = document.getElementById(`${type}-download-btn`);
+                
+                // 文件选择事件
+                fileInput.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        const file = this.files[0];
+                        fileName.textContent = file.name;
+                        
+                        // 检查API密钥
+                        const apiKey = document.getElementById(`${type}-api-key`).value.trim();
+                        if (apiKey) {
                             startButton.disabled = false;
                         }
                         
@@ -782,48 +1179,39 @@
                     }
                 });
                 
-                // API密钥输入时更新按钮状态
-                apiKeyInput.addEventListener('input', () => {
-                    // 检查文件是否已上传
-                    if (fileNameDisplay.textContent) {
-                        startButton.disabled = apiKeyInput.value.trim() === '';
+                // API密钥输入事件
+                document.getElementById(`${type}-api-key`).addEventListener('input', function() {
+                    const apiKey = this.value.trim();
+                    const hasFile = fileInput.files.length > 0;
+                    
+                    if (apiKey && hasFile) {
+                        startButton.disabled = false;
+                    } else {
+                        startButton.disabled = true;
                     }
                 });
-            }
-
-            // 设置按钮事件
-            function setupButtonEvents(type) {
-                const startButton = document.getElementById(`${type}-start-btn`);
-                const pauseButton = document.getElementById(`${type}-pause-btn`);
-                const resumeButton = document.getElementById(`${type}-resume-btn`);
-                const finishButton = document.getElementById(`${type}-finish-btn`);
-                const endButton = document.getElementById(`${type}-end-btn`);
-                const analyzeButton = document.getElementById(`${type}-analyze-btn`);
-                const downloadButton = document.getElementById(`${type}-download-btn`);
-                const apiKeyInput = document.getElementById(`${type}-api-key`);
                 
-                // 开始按钮
+                // 开始任务按钮
                 startButton.addEventListener('click', () => {
-                    const apiKey = apiKeyInput.value.trim();
+                    const apiKey = document.getElementById(`${type}-api-key`).value.trim();
                     if (!apiKey) {
                         showStatusMessage(type, 'API密钥不能为空', 'error');
                         return;
                     }
-                    
                     runTask(type, apiKey);
                 });
                 
-                // 暂停按钮
+                // 暂停任务按钮
                 pauseButton.addEventListener('click', () => {
                     controlTask(type, 'pause');
                 });
                 
-                // 继续按钮
+                // 继续任务按钮
                 resumeButton.addEventListener('click', () => {
                     controlTask(type, 'resume');
                 });
                 
-                // 完成按钮
+                // 完成任务按钮
                 finishButton.addEventListener('click', () => {
                     controlTask(type, 'finish');
                 });
@@ -1123,9 +1511,19 @@
                 });
             }
             
-            // 加载历史数据
-            function loadHistoryData() {
-                fetch('/history')
+            // 加载历史数据 - 修改为支持时间筛选
+            function loadHistoryData(page = 1) {
+                let url = `/history/page?page=${page}&per_page=${historyPerPage}`;
+                
+                // 添加时间筛选参数
+                if (currentStartDate) {
+                    url += `&start_date=${currentStartDate}`;
+                }
+                if (currentEndDate) {
+                    url += `&end_date=${currentEndDate}`;
+                }
+                
+                fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -1138,25 +1536,49 @@
                     
                     if (data.history.length === 0) {
                         historyList.innerHTML = '<p>暂无历史记录</p>';
+                        // 更新分页信息
+                        document.getElementById('history-page-info').textContent = '暂无数据';
+                        document.getElementById('history-prev-page').disabled = true;
+                        document.getElementById('history-next-page').disabled = true;
                         return;
                     }
                     
+                    currentHistoryPage = data.page;
+                    totalHistoryPages = data.pages;
+                    
+                    // 更新分页信息
+                    document.getElementById('history-page-info').textContent = 
+                        `第 ${currentHistoryPage} 页，共 ${totalHistoryPages} 页，总计 ${data.total} 条记录`;
+                    
+                    // 更新分页按钮状态
+                    document.getElementById('history-prev-page').disabled = currentHistoryPage <= 1;
+                    document.getElementById('history-next-page').disabled = currentHistoryPage >= totalHistoryPages;
+                    
+                    // 渲染历史记录
                     data.history.forEach(record => {
-                        const historyItem = document.createElement('div');
-                        historyItem.className = 'history-item';
-                        
-                        // 修复三元表达式语法错误
                         const auditTypeText = 
                             record.audit_type === 'comment' ? '评论审核' : 
                             record.audit_type === 'cover' ? '封面审核' : 
                             record.audit_type === 'push' ? '智慧Push审核' : 
                             '品牌守护审核';
                         
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'history-item';
+                        
+                        // 提取统计信息
+                        const stats = record.statistics || {};
+                        const results = stats.results || {};
+                        
                         historyItem.innerHTML = `
-                            <h4>${auditTypeText}</h4>
+                            <h4>${auditTypeText} - ${record.filename || '未知文件'}</h4>
                             <p>时间: ${record.datetime}</p>
                             <p>ID: ${record.id}</p>
-                            <a href="/history/download/${record.id}" target="_blank">下载结果</a>
+                            <p>总记录数: ${record.total_rows || 0} | 
+                                正常: ${results.正常 || 0} | 
+                                低质: ${results.低质 || 0} | 
+                                处理失败: ${results.处理失败 || 0}
+                            </p>
+                            <a href="/history/download/${record.id}" target="_blank">下载详细结果</a>
                         `;
                         
                         historyList.appendChild(historyItem);
@@ -1167,11 +1589,161 @@
                 });
             }
             
-            // 显示状态消息
-            function showStatusMessage(type, message, messageType = 'info') {
-                const statusMessage = document.getElementById(`${type}-status-message`);
-                statusMessage.textContent = message;
-                statusMessage.className = `status-message ${messageType}`;
+            // 修复加载历史统计信息函数 - 支持时间筛选
+            function loadHistoryStatistics() {
+                let url = '/history/statistics';
+                const params = [];
+                
+                // 添加时间筛选参数
+                if (currentStartDate) {
+                    params.push(`start_date=${currentStartDate}`);
+                }
+                if (currentEndDate) {
+                    params.push(`end_date=${currentEndDate}`);
+                }
+                
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+                
+                fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Statistics error:', data.error);
+                        return;
+                    }
+                    
+                    // 更新任务统计表格
+                    const byType = data.by_type || {};
+                    document.getElementById('stats-total').textContent = Object.values(byType).reduce((a, b) => a + b, 0);
+                    document.getElementById('stats-comment').textContent = byType.comment || 0;
+                    document.getElementById('stats-cover').textContent = byType.cover || 0;
+                    document.getElementById('stats-push').textContent = byType.push || 0;
+                    document.getElementById('stats-brand').textContent = byType.brand || 0;
+                    
+                    // 修复巡检量级统计表格 - 使用正确的数据源
+                    const byVolume = data.by_volume || {};
+                    document.getElementById('volume-total').textContent = Object.values(byVolume).reduce((a, b) => a + b, 0);
+                    document.getElementById('volume-comment').textContent = byVolume.comment || 0;
+                    document.getElementById('volume-cover').textContent = byVolume.cover || 0;
+                    document.getElementById('volume-push').textContent = byVolume.push || 0;
+                    document.getElementById('volume-brand').textContent = byVolume.brand || 0;
+                    
+                    // 渲染图表
+                    renderHistoryTypeChart(byType);
+                    renderHistoryDateChart(data.by_date || {});
+                })
+                .catch(error => {
+                    console.error('Error loading history statistics:', error);
+                });
+            }
+            
+            // 渲染历史类型图表
+            function renderHistoryTypeChart(byType) {
+                if (!checkChartAvailable()) return;
+                
+                const ctx = document.getElementById('history-type-chart');
+                if (!ctx) return;
+                
+                const context = ctx.getContext('2d');
+                
+                // 销毁现有图表
+                if (window.historyTypeChart) {
+                    window.historyTypeChart.destroy();
+                }
+                
+                // 准备数据
+                const typeLabels = {
+                    'comment': '评论审核',
+                    'cover': '封面审核',
+                    'push': 'Push审核',
+                    'brand': '品牌守护'
+                };
+                
+                const labels = Object.keys(byType).map(key => typeLabels[key] || key);
+                const data = Object.values(byType);
+                
+                // 创建图表
+                window.historyTypeChart = new Chart(context, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: [
+                                '#4a90e2',
+                                '#50e3c2',
+                                '#f0ad4e',
+                                '#d9534f'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 渲染历史日期图表
+            function renderHistoryDateChart(byDate) {
+                if (!checkChartAvailable()) return;
+                
+                const ctx = document.getElementById('history-date-chart');
+                if (!ctx) return;
+                
+                const context = ctx.getContext('2d');
+                
+                // 销毁现有图表
+                if (window.historyDateChart) {
+                    window.historyDateChart.destroy();
+                }
+                
+                // 准备数据（最近7天）
+                const labels = [];
+                const data = [];
+                const today = new Date();
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    labels.push(dateStr);
+                    data.push(byDate[dateStr] || 0);
+                }
+                
+                // 创建图表
+                window.historyDateChart = new Chart(context, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '任务数量',
+                            data: data,
+                            borderColor: '#4a90e2',
+                            backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
             }
             
             // 更新UI为处理中状态
@@ -1277,7 +1849,49 @@
                 // 启用文件上传
                 document.getElementById(`${type}-file`).disabled = false;
             }
+
+            // 历史记录分页按钮事件
+            document.getElementById('history-prev-page').addEventListener('click', () => {
+                if (currentHistoryPage > 1) {
+                    loadHistoryData(currentHistoryPage - 1);
+                }
+            });
+            
+            document.getElementById('history-next-page').addEventListener('click', () => {
+                if (currentHistoryPage < totalHistoryPages) {
+                    loadHistoryData(currentHistoryPage + 1);
+                }
+            });
+            
+            // 导出按钮事件 - 修改为支持时间筛选
+            document.getElementById('history-export-json').addEventListener('click', () => {
+                exportHistory('json');
+            });
+            
+            document.getElementById('history-export-csv').addEventListener('click', () => {
+                exportHistory('csv');
+            });
+            
+            function exportHistory(format) {
+                let url = `/history/export?format=${format}`;
+                
+                // 添加时间筛选参数
+                if (currentStartDate) {
+                    url += `&start_date=${currentStartDate}`;
+                }
+                if (currentEndDate) {
+                    url += `&end_date=${currentEndDate}`;
+                }
+                
+                window.location.href = url;
+            }
+            
+            // 初始化加载第一页历史记录
+            if (document.getElementById('history-tab').classList.contains('active')) {
+                initializeHistoryPage();
+            }
         });
     </script>
 </body>
 </html>
+

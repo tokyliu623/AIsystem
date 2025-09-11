@@ -1,0 +1,19 @@
+{
+  "id": "7623c90b-3e3f-4280-9b49-d79216af4487",
+  "audit_type": "comment",
+  "datetime": "2025-09-08 19:12:00",
+  "result_path": "result\\comment_7623c90b-3e3f-4280-9b49-d79216af4487_result.xlsx",
+  "filename": "comment_7623c90b-3e3f-4280-9b49-d79216af4487.xlsx",
+  "total_rows": 10,
+  "statistics": {
+    "results": {
+      "低质": 5,
+      "正常": 5
+    },
+    "tags": {
+      "涉政": 4,
+      "谩骂": 1
+    }
+  },
+  "status": "completed"
+}

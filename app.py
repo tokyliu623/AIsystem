@@ -13,6 +13,7 @@ AI智能内容巡检系统 - 修复版
 5. 新增品牌守护审核功能，集成pro.py中的代码
 6. 修复push巡检功能，使其与"新增push巡检"版本保持一致
 7. 修复历史记录页中的巡检数量统计问题
+8. 修复历史记录下载功能，使其从文件系统读取记录
 
 Python 2.7 兼容版本
 """
@@ -247,11 +248,15 @@ def get_history_page():
         logger.error("获取分页历史记录错误: %s" % str(e))
         return jsonify({'error': '获取历史记录失败: %s' % str(e)}), 500
 
-# 修复历史统计API - 添加巡检量级统计
+# 修复历史统计API - 添加巡检量级统计并支持时间筛选
 @app.route('/history/statistics')
 def get_history_statistics():
-    """获取历史统计信息 - 修复版，包含巡检量级统计"""
+    """获取历史统计信息 - 修复版，包含巡检量级统计并支持时间筛选"""
     try:
+        # 获取时间筛选参数
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
+        
         # 加载历史索引
         if not os.path.exists(HISTORY_INDEX_FILE):
             return jsonify({
@@ -263,9 +268,25 @@ def get_history_statistics():
         with open(HISTORY_INDEX_FILE, 'r', encoding='utf-8') as f:
             all_history = json.load(f)
         
+        # 过滤记录（按时间筛选）
+        filtered_history = []
+        for record in all_history:
+            # 按日期过滤
+            record_date = datetime.strptime(record['datetime'], '%Y-%m-%d %H:%M:%S')
+            if start_date:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                if record_date < start_dt:
+                    continue
+            if end_date:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+                if record_date >= end_dt:
+                    continue
+                    
+            filtered_history.append(record)
+        
         # 按类型统计任务数量
         by_type = {}
-        for record in all_history:
+        for record in filtered_history:
             audit_type = record['audit_type']
             if audit_type not in by_type:
                 by_type[audit_type] = 0
@@ -273,7 +294,7 @@ def get_history_statistics():
         
         # 按类型统计巡检量级（total_rows）
         by_volume = {}
-        for record in all_history:
+        for record in filtered_history:
             audit_type = record['audit_type']
             total_rows = record.get('total_rows', 0)
             if audit_type not in by_volume:
@@ -287,7 +308,7 @@ def get_history_statistics():
             date_str = (today - timedelta(days=i)).strftime('%Y-%m-%d')
             by_date[date_str] = 0
             
-        for record in all_history:
+        for record in filtered_history:
             record_date = datetime.strptime(record['datetime'], '%Y-%m-%d %H:%M:%S')
             date_str = record_date.strftime('%Y-%m-%d')
             if date_str in by_date:
@@ -648,22 +669,35 @@ def get_history():
         logger.error("获取历史记录错误: %s" % str(e))
         return jsonify({'error': '获取历史记录失败: %s' % str(e)}), 500
 
+# 修复历史记录下载功能
 @app.route('/history/download/<history_id>')
 def download_history(history_id):
-    """下载历史结果文件"""
+    """下载历史结果文件 - 修复版，从文件系统读取历史记录"""
     try:
-        # 查找历史记录
-        for record in history_records:
-            if record['id'] == history_id:
-                result_path = record['result_path']
-                
-                if not os.path.exists(result_path):
-                    return jsonify({'error': '历史结果文件不存在'}), 404
-                
-                # 返回文件
-                return send_file(result_path, as_attachment=True)
+        # 从文件系统加载历史记录
+        if not os.path.exists(HISTORY_INDEX_FILE):
+            return jsonify({'error': '历史记录不存在'}), 404
+            
+        with open(HISTORY_INDEX_FILE, 'r', encoding='utf-8') as f:
+            all_history = json.load(f)
         
-        return jsonify({'error': '历史记录不存在'}), 404
+        # 查找历史记录
+        target_record = None
+        for record in all_history:
+            if record['id'] == history_id:
+                target_record = record
+                break
+        
+        if not target_record:
+            return jsonify({'error': '历史记录不存在'}), 404
+        
+        result_path = target_record['result_path']
+        
+        if not os.path.exists(result_path):
+            return jsonify({'error': '历史结果文件不存在'}), 404
+        
+        # 返回文件
+        return send_file(result_path, as_attachment=True)
         
     except Exception as e:
         logger.error("下载历史结果错误: %s" % str(e))

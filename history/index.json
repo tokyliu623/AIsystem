@@ -1,0 +1,58 @@
+[
+  {
+    "id": "59585ecd-fe2d-41c6-84e7-50fc5c58cd6e",
+    "audit_type": "brand",
+    "datetime": "2025-09-18 09:39:12",
+    "result_path": "result\\brand_59585ecd-fe2d-41c6-84e7-50fc5c58cd6e_result.xlsx",
+    "filename": "brand_59585ecd-fe2d-41c6-84e7-50fc5c58cd6e.xlsx",
+    "total_rows": 9,
+    "statistics": {
+      "results": {
+        "违规": 9
+      },
+      "tags": {
+        "品牌负向": 8,
+        "用户负面体验": 2
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "11026401-3daf-4dd8-ad7a-10d5e648c7ec",
+    "audit_type": "cover",
+    "datetime": "2025-09-18 09:41:12",
+    "result_path": "result\\cover_11026401-3daf-4dd8-ad7a-10d5e648c7ec_result.xlsx",
+    "filename": "cover_11026401-3daf-4dd8-ad7a-10d5e648c7ec.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "违规": 2,
+        "正常": 8
+      },
+      "tags": {
+        "低俗": 1,
+        "封面问题": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "fdcc9e64-31f5-4344-a721-c25ad1e3dbfa",
+    "audit_type": "comment",
+    "datetime": "2025-09-18 09:45:56",
+    "result_path": "result\\comment_fdcc9e64-31f5-4344-a721-c25ad1e3dbfa_result.xlsx",
+    "filename": "comment_fdcc9e64-31f5-4344-a721-c25ad1e3dbfa.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 4,
+        "色情": 1
+      }
+    },
+    "status": "completed"
+  }
+]

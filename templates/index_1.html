@@ -293,6 +293,24 @@
         .btn-info {
             background-color: #3498db;
             color: white;
+            text-decoration: none;
+            display: inline-block;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .btn-info:hover {
+            background-color: #2980b9;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .result-container {
@@ -1578,9 +1596,11 @@
                                 低质: ${results.低质 || 0} | 
                                 处理失败: ${results.处理失败 || 0}
                             </p>
-                            <a href="/history/download/${record.id}" target="_blank">下载详细结果</a>
+                            <div style="margin-top: 10px;">
+                                <a href="/history/download/${record.id}" target="_blank" class="btn-info">下载结果</a>
+                                <button class="btn-danger delete-history-btn" data-id="${record.id}" style="margin-left: 10px;">删除</button>
+                            </div>
                         `;
-                        
                         historyList.appendChild(historyItem);
                     });
                 })
@@ -1890,8 +1910,47 @@
             if (document.getElementById('history-tab').classList.contains('active')) {
                 initializeHistoryPage();
             }
-        });
+
+            // 删除历史记录
+			
+			document.getElementById('history-list').addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('delete-history-btn')) {
+              const historyId = e.target.getAttribute('data-id');
+                if (confirm(`确定要删除这条ID为 ${historyId} 的历史记录吗？删除后无法恢复。`)) {
+                   fetch(`/history/${historyId}`, {
+                   method: 'DELETE',
+                   headers: {
+                    'Content-Type': 'application/json'
+                  }
+              })
+                .then(response => {
+                   if (!response.ok) {
+                    // 尝试解析错误信息
+                    return response.text().then(text => {
+                        try {
+                            const errorData = JSON.parse(text);
+                            throw new Error(errorData.error || '删除失败');
+                        } catch (e) {
+                            // 如果不是JSON，直接使用文本
+                            throw new Error(text || '删除失败');
+                        }
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message || '删除成功');
+                // 刷新历史记录和统计数据
+                loadHistoryData(currentHistoryPage);
+                loadHistoryStatistics();
+            })
+            .catch(error => {
+                console.error('删除历史记录错误:', error);
+                alert('删除失败: ' + error.message);
+              });
+           }
+        }
+     });
     </script>
 </body>
 </html>
-

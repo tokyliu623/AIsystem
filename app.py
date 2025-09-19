@@ -703,6 +703,53 @@ def download_history(history_id):
         logger.error("下载历史结果错误: %s" % str(e))
         return jsonify({'error': '下载历史结果失败: %s' % str(e)}), 500
 
+# 删除历史记录路由 - 修复版
+@app.route("/history/<history_id>", methods=["DELETE"])
+def delete_history_record(history_id):
+    """删除历史记录并更新统计数据"""
+    try:
+        # 加载历史索引
+        if not os.path.exists(HISTORY_INDEX_FILE):
+            return jsonify({"error": "历史记录索引文件不存在"}), 404
+
+        with open(HISTORY_INDEX_FILE, "r", encoding="utf-8") as f:
+            all_history = json.load(f)
+
+        # 查找要删除的记录
+        target_record = None
+        for record in all_history:
+            if record["id"] == history_id:
+                target_record = record
+                break
+
+        if not target_record:
+            return jsonify({"error": "未找到指定的历史记录"}), 404
+
+        # 获取结果文件路径
+        result_path = target_record.get('result_path', '')
+        
+        # 从索引中删除记录
+        updated_history = [record for record in all_history if record["id"] != history_id]
+
+        # 保存更新后的索引
+        with open(HISTORY_INDEX_FILE, "w", encoding="utf-8") as f:
+            json.dump(updated_history, f, ensure_ascii=False, indent=2)
+
+        # 删除对应的详细历史记录文件
+        history_file = os.path.join(HISTORY_DIR, f"{history_id}.json")
+        if os.path.exists(history_file):
+            os.remove(history_file)
+            
+        # 删除对应的结果文件 (如果存在)
+        if result_path and os.path.exists(result_path):
+            os.remove(result_path)
+
+        return jsonify({"message": "历史记录删除成功", "id": history_id}), 200
+
+    except Exception as e:
+        logger.error(f"删除历史记录失败: {e}")
+        return jsonify({"error": f"删除失败: {e}"}), 500
+
 def process_comment_file(filename, api_key, session_id):
     """处理评论文件 - 使用传入的session_id而非Flask session"""
     try:

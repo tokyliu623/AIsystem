@@ -54,5 +54,720 @@
       }
     },
     "status": "completed"
+  },
+  {
+    "id": "1fb52a6c-a585-4da6-a7c5-3a232355a6f3",
+    "audit_type": "news",
+    "datetime": "2025-10-10 09:27:21",
+    "result_path": "result\\news_1fb52a6c-a585-4da6-a7c5-3a232355a6f3_result.xlsx",
+    "filename": "news_1fb52a6c-a585-4da6-a7c5-3a232355a6f3.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "无图片": 4
+      },
+      "tags": {
+        "无图片链接": 4
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "7e75930d-ab59-4090-ac8d-392c4e90151f",
+    "audit_type": "news",
+    "datetime": "2025-10-10 10:20:28",
+    "result_path": "result\\news_7e75930d-ab59-4090-ac8d-392c4e90151f_result.xlsx",
+    "filename": "news_7e75930d-ab59-4090-ac8d-392c4e90151f.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "无图片": 4
+      },
+      "tags": {
+        "无图片链接": 4
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "b5ee875a-4b37-4bed-8801-72105cc0c2fc",
+    "audit_type": "news",
+    "datetime": "2025-10-10 12:04:55",
+    "result_path": "result\\news_b5ee875a-4b37-4bed-8801-72105cc0c2fc_result.xlsx",
+    "filename": "news_b5ee875a-4b37-4bed-8801-72105cc0c2fc.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "无图片": 4
+      },
+      "tags": {
+        "无图片链接": 4
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "39651163-ad15-4e68-a277-fc1c99be7582",
+    "audit_type": "news",
+    "datetime": "2025-10-10 14:20:45",
+    "result_path": "result\\news_39651163-ad15-4e68-a277-fc1c99be7582_result.xlsx",
+    "filename": "news_39651163-ad15-4e68-a277-fc1c99be7582.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "无图片": 4
+      },
+      "tags": {
+        "无图片链接": 4
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "be38044d-e8c9-4472-b0d5-88c3128b6c3e",
+    "audit_type": "news",
+    "datetime": "2025-10-10 15:03:30",
+    "result_path": "result\\news_be38044d-e8c9-4472-b0d5-88c3128b6c3e_result.xlsx",
+    "filename": "news_be38044d-e8c9-4472-b0d5-88c3128b6c3e.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "无图片": 4
+      },
+      "tags": {
+        "无图片链接": 4
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "38e6721d-7a5c-4cdd-919a-0154117a7a49",
+    "audit_type": "news",
+    "datetime": "2025-10-10 16:11:28",
+    "result_path": "result\\news_38e6721d-7a5c-4cdd-919a-0154117a7a49_result.xlsx",
+    "filename": "news_38e6721d-7a5c-4cdd-919a-0154117a7a49.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "无图片": 4
+      },
+      "tags": {
+        "无图片链接": 4
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "76435c36-f8d7-49a2-8e67-3ddf1679c6c3",
+    "audit_type": "news",
+    "datetime": "2025-10-10 17:50:33",
+    "result_path": "result\\news_76435c36-f8d7-49a2-8e67-3ddf1679c6c3_result.xlsx",
+    "filename": "news_76435c36-f8d7-49a2-8e67-3ddf1679c6c3.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "处理失败": 1
+      },
+      "tags": {}
+    },
+    "status": "completed"
+  },
+  {
+    "id": "213cbf33-0f85-45ce-afa4-18d664257242",
+    "audit_type": "news",
+    "datetime": "2025-10-10 17:54:36",
+    "result_path": "result\\news_213cbf33-0f85-45ce-afa4-18d664257242_result.xlsx",
+    "filename": "news_213cbf33-0f85-45ce-afa4-18d664257242.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "处理失败": 1
+      },
+      "tags": {}
+    },
+    "status": "completed"
+  },
+  {
+    "id": "f0eac67c-0a8f-4ba3-b33c-30d8d64ada8e",
+    "audit_type": "news",
+    "datetime": "2025-10-10 18:10:34",
+    "result_path": "result\\news_f0eac67c-0a8f-4ba3-b33c-30d8d64ada8e_result.xlsx",
+    "filename": "news_f0eac67c-0a8f-4ba3-b33c-30d8d64ada8e.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "违规": 3,
+        "处理失败": 1
+      },
+      "tags": {
+        "软文": 1,
+        "低俗": 2,
+        "低俗、画面低质": 2,
+        "/": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "02f0153e-6b0a-41c5-93b0-24b823ae6b42",
+    "audit_type": "news",
+    "datetime": "2025-10-10 21:00:25",
+    "result_path": "result\\news_02f0153e-6b0a-41c5-93b0-24b823ae6b42_result.xlsx",
+    "filename": "news_02f0153e-6b0a-41c5-93b0-24b823ae6b42.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "违规": 3,
+        "正常": 1
+      },
+      "tags": {
+        "软文": 2,
+        "/": 1,
+        "低俗": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "d9f700a6-cae2-4df9-be72-9723bd74bebb",
+    "audit_type": "news",
+    "datetime": "2025-10-11 10:33:31",
+    "result_path": "result\\news_d9f700a6-cae2-4df9-be72-9723bd74bebb_result.xlsx",
+    "filename": "news_d9f700a6-cae2-4df9-be72-9723bd74bebb.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {},
+      "tags": {}
+    },
+    "status": "completed"
+  },
+  {
+    "id": "9ecd4945-df3e-4e55-8f82-d89bb63dfe6e",
+    "audit_type": "news",
+    "datetime": "2025-10-11 11:01:25",
+    "result_path": "result\\news_9ecd4945-df3e-4e55-8f82-d89bb63dfe6e_result.xlsx",
+    "filename": "news_9ecd4945-df3e-4e55-8f82-d89bb63dfe6e.xlsx",
+    "total_rows": 4,
+    "statistics": {
+      "results": {
+        "违规": 4
+      },
+      "tags": {
+        "软文": 2,
+        "低俗": 2,
+        "图片审核失败": 1,
+        "画面低质": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "d6dea5b7-e5a3-45cd-a43b-f02f32d1f9db",
+    "audit_type": "news",
+    "datetime": "2025-10-11 11:26:21",
+    "result_path": "result\\news_d6dea5b7-e5a3-45cd-a43b-f02f32d1f9db_result.xlsx",
+    "filename": "news_d6dea5b7-e5a3-45cd-a43b-f02f32d1f9db.xlsx",
+    "total_rows": 8,
+    "statistics": {
+      "results": {
+        "违规": 7,
+        "正常": 1
+      },
+      "tags": {
+        "标题党": 3,
+        "内容低质": 4,
+        "无图片": 2,
+        "软文": 2,
+        "画面低质": 1,
+        "/": 1,
+        "图片审核失败": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "b0fec0dd-3494-4df0-8241-e2d4036e3bab",
+    "audit_type": "news",
+    "datetime": "2025-10-11 15:12:03",
+    "result_path": "result\\news_b0fec0dd-3494-4df0-8241-e2d4036e3bab_result.xlsx",
+    "filename": "news_b0fec0dd-3494-4df0-8241-e2d4036e3bab.xlsx",
+    "total_rows": 8,
+    "statistics": {
+      "results": {
+        "违规": 8
+      },
+      "tags": {
+        "软文": 3,
+        "图片审核失败": 7,
+        "内容低质": 2,
+        "标题党": 3,
+        "无图片": 1,
+        "胡编乱造": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "75348cbf-a926-434a-b1ce-e7c55d9eab8f",
+    "audit_type": "news",
+    "datetime": "2025-10-11 16:21:25",
+    "result_path": "result\\news_75348cbf-a926-434a-b1ce-e7c55d9eab8f_result.xlsx",
+    "filename": "news_75348cbf-a926-434a-b1ce-e7c55d9eab8f.xlsx",
+    "total_rows": 8,
+    "statistics": {
+      "results": {
+        "违规": 8
+      },
+      "tags": {
+        "软文": 3,
+        "低俗": 1,
+        "图片审核失败": 4,
+        "内容低质": 1,
+        "标题党": 3,
+        "画面低质": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "0a5ad913-6832-4b9f-9e2a-92c23d2d32e4",
+    "audit_type": "news",
+    "datetime": "2025-10-15 11:09:34",
+    "result_path": "result\\news_0a5ad913-6832-4b9f-9e2a-92c23d2d32e4_result.xlsx",
+    "filename": "news_1348a1eb-6614-4854-96eb-2be2ba95d2f0.xlsx",
+    "total_rows": 8,
+    "statistics": {
+      "results": {
+        "正常": 1
+      },
+      "tags": {
+        "文本提取失败": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "4b9be899-094b-4d45-a435-f80cb54368e0",
+    "audit_type": "news",
+    "datetime": "2025-10-15 11:11:00",
+    "result_path": "result\\news_4b9be899-094b-4d45-a435-f80cb54368e0_result.xlsx",
+    "filename": "news_4b9be899-094b-4d45-a435-f80cb54368e0.xlsx",
+    "total_rows": 8,
+    "statistics": {
+      "results": {
+        "无内容": 8
+      },
+      "tags": {
+        "文本提取失败": 8,
+        "无图片": 8
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "ecd31041-338b-41fd-b4c2-8f121d34b92c",
+    "audit_type": "news",
+    "datetime": "2025-10-15 11:21:12",
+    "result_path": "result\\news_ecd31041-338b-41fd-b4c2-8f121d34b92c_result.xlsx",
+    "filename": "news_f7e5572a-713b-45a6-be62-9a901c2d5da5.xlsx",
+    "total_rows": 7,
+    "statistics": {
+      "results": {
+        "违规": 1
+      },
+      "tags": {
+        "软文": 1,
+        "低俗": 1,
+        "画面低质": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "e06f3472-fda6-46ae-96cd-1ef42263198b",
+    "audit_type": "news",
+    "datetime": "2025-10-15 11:30:52",
+    "result_path": "result\\news_e06f3472-fda6-46ae-96cd-1ef42263198b_result.xlsx",
+    "filename": "news_e06f3472-fda6-46ae-96cd-1ef42263198b.xlsx",
+    "total_rows": 7,
+    "statistics": {
+      "results": {
+        "违规": 7
+      },
+      "tags": {
+        "软文": 4,
+        "低俗": 1,
+        "画面低质": 3,
+        "标题党": 3,
+        "内容低质": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "87ab1593-330c-4106-8a79-d453e2519236",
+    "audit_type": "news",
+    "datetime": "2025-10-15 12:12:47",
+    "result_path": "result\\news_87ab1593-330c-4106-8a79-d453e2519236_result.xlsx",
+    "filename": "news_87ab1593-330c-4106-8a79-d453e2519236.xlsx",
+    "total_rows": 25,
+    "statistics": {
+      "results": {
+        "正常": 5,
+        "违规": 20
+      },
+      "tags": {
+        "/": 5,
+        "画面低质": 10,
+        "低俗": 4,
+        "标题党": 7,
+        "软文": 3,
+        "重口味": 3,
+        "内容低质": 1,
+        "封建迷信": 1,
+        "真实性欠考": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "849c317a-9589-4f7c-8e00-a2449a4ac6cc",
+    "audit_type": "news",
+    "datetime": "2025-10-15 18:23:51",
+    "result_path": "result\\news_849c317a-9589-4f7c-8e00-a2449a4ac6cc_result.xlsx",
+    "filename": "news_849c317a-9589-4f7c-8e00-a2449a4ac6cc.xlsx",
+    "total_rows": 7,
+    "statistics": {
+      "results": {
+        "正常": 2,
+        "违规": 5
+      },
+      "tags": {
+        "/": 1,
+        "小图片": 6,
+        "标题党": 3,
+        "低俗": 2,
+        "画面低质": 1,
+        "重口味": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "95c1b0ae-b115-4d3c-a127-b03ee664e5de",
+    "audit_type": "news",
+    "datetime": "2025-10-15 18:50:52",
+    "result_path": "result\\news_95c1b0ae-b115-4d3c-a127-b03ee664e5de_result.xlsx",
+    "filename": "news_95c1b0ae-b115-4d3c-a127-b03ee664e5de.xlsx",
+    "total_rows": 7,
+    "statistics": {
+      "results": {
+        "正常": 2,
+        "违规": 5
+      },
+      "tags": {
+        "/": 2,
+        "标题党": 3,
+        "低俗": 1,
+        "画面低质": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "9f97b8ce-8994-4106-90aa-75f0374fce41",
+    "audit_type": "news",
+    "datetime": "2025-10-15 19:36:20",
+    "result_path": "result\\news_9f97b8ce-8994-4106-90aa-75f0374fce41_result.xlsx",
+    "filename": "news_9f97b8ce-8994-4106-90aa-75f0374fce41.xlsx",
+    "total_rows": 25,
+    "statistics": {
+      "results": {
+        "违规": 19,
+        "正常": 6
+      },
+      "tags": {
+        "标题党": 7,
+        "画面低质": 8,
+        "低俗": 5,
+        "/": 6,
+        "软文": 3,
+        "重口味": 2,
+        "真实性欠考": 2,
+        "封建迷信": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "7ad03cb2-cb6f-402e-9688-a5790a7a13d9",
+    "audit_type": "news",
+    "datetime": "2025-10-15 20:11:03",
+    "result_path": "result\\news_7ad03cb2-cb6f-402e-9688-a5790a7a13d9_result.xlsx",
+    "filename": "news_7ad03cb2-cb6f-402e-9688-a5790a7a13d9.xlsx",
+    "total_rows": 25,
+    "statistics": {
+      "results": {
+        "正常": 7,
+        "违规": 18
+      },
+      "tags": {
+        "/": 7,
+        "画面低质": 7,
+        "低俗": 3,
+        "标题党": 7,
+        "软文": 3,
+        "重口味": 2,
+        "老少恋": 1,
+        "内容低质": 2,
+        "伪科学": 1,
+        "封建迷信": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "9a190041-51a8-48ee-91d5-5833cd52ec99",
+    "audit_type": "news",
+    "datetime": "2025-10-20 10:20:57",
+    "result_path": "result\\news_9a190041-51a8-48ee-91d5-5833cd52ec99_result.xlsx",
+    "filename": "news_9a190041-51a8-48ee-91d5-5833cd52ec99.xlsx",
+    "total_rows": 50,
+    "statistics": {
+      "results": {
+        "违规": 28,
+        "正常": 22
+      },
+      "tags": {
+        "软文": 6,
+        "标题党": 8,
+        "内容低质": 9,
+        "/": 20,
+        "画面低质": 9,
+        "低俗": 6,
+        "重口味": 3,
+        "无图片": 2
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "6208efc0-2579-4efb-a75d-2552a51431aa",
+    "audit_type": "news",
+    "datetime": "2025-10-20 18:28:43",
+    "result_path": "result\\news_6208efc0-2579-4efb-a75d-2552a51431aa_result.xlsx",
+    "filename": "news_6208efc0-2579-4efb-a75d-2552a51431aa.xlsx",
+    "total_rows": 20,
+    "statistics": {
+      "results": {
+        "违规": 10,
+        "正常": 10
+      },
+      "tags": {
+        "低俗": 6,
+        "画面低质": 2,
+        "/": 9,
+        "无图片": 1,
+        "内容低质": 2,
+        "软文": 2,
+        "标题党": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "eedfaa93-6dd1-4086-881e-ee228ed726ac",
+    "audit_type": "comment",
+    "datetime": "2025-10-20 18:41:52",
+    "result_path": "result\\comment_eedfaa93-6dd1-4086-881e-ee228ed726ac_result.xlsx",
+    "filename": "comment_eedfaa93-6dd1-4086-881e-ee228ed726ac.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 4,
+        "正常": 6
+      },
+      "tags": {
+        "涉政": 3,
+        "谩骂": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "e16b7b04-8560-4fa6-a00a-84aea44c9fc5",
+    "audit_type": "comment",
+    "datetime": "2025-10-20 18:51:39",
+    "result_path": "result\\comment_e16b7b04-8560-4fa6-a00a-84aea44c9fc5_result.xlsx",
+    "filename": "comment_e16b7b04-8560-4fa6-a00a-84aea44c9fc5.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 4,
+        "谩骂": 2
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "a4555edb-ddeb-4f63-abe5-1cd99374c77d",
+    "audit_type": "comment",
+    "datetime": "2025-10-20 19:33:02",
+    "result_path": "result\\comment_a4555edb-ddeb-4f63-abe5-1cd99374c77d_result.xlsx",
+    "filename": "comment_a4555edb-ddeb-4f63-abe5-1cd99374c77d.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 4,
+        "正常": 6
+      },
+      "tags": {
+        "涉政": 3,
+        "色情": 1,
+        "谩骂": 2
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "2182d1e1-8295-40b6-8924-4f29b736321b",
+    "audit_type": "news",
+    "datetime": "2025-10-20 19:59:06",
+    "result_path": "result\\news_2182d1e1-8295-40b6-8924-4f29b736321b_result.xlsx",
+    "filename": "news_2182d1e1-8295-40b6-8924-4f29b736321b.xlsx",
+    "total_rows": 20,
+    "statistics": {
+      "results": {
+        "违规": 9,
+        "正常": 11
+      },
+      "tags": {
+        "画面低质": 3,
+        "/": 10,
+        "无图片": 1,
+        "软文": 2,
+        "低俗": 4,
+        "内容低质": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "d95f421c-5148-4b8a-9a82-16b2ab99da95",
+    "audit_type": "comment",
+    "datetime": "2025-10-21 12:03:53",
+    "result_path": "result\\comment_d95f421c-5148-4b8a-9a82-16b2ab99da95_result.xlsx",
+    "filename": "comment_d95f421c-5148-4b8a-9a82-16b2ab99da95.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 4,
+        "谩骂": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "52cdc318-f07d-4594-a20b-40ce39f31edd",
+    "audit_type": "comment",
+    "datetime": "2025-10-21 14:56:45",
+    "result_path": "result\\comment_52cdc318-f07d-4594-a20b-40ce39f31edd_result.xlsx",
+    "filename": "comment_52cdc318-f07d-4594-a20b-40ce39f31edd.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 4,
+        "谩骂": 3
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "9319dade-341c-4040-842c-26fbd514fb2d",
+    "audit_type": "comment",
+    "datetime": "2025-10-21 15:11:22",
+    "result_path": "result\\comment_9319dade-341c-4040-842c-26fbd514fb2d_result.xlsx",
+    "filename": "comment_9319dade-341c-4040-842c-26fbd514fb2d.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 4,
+        "谩骂": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "db0735ce-9b91-49e4-9d05-5e3828115744",
+    "audit_type": "comment",
+    "datetime": "2025-10-21 15:29:52",
+    "result_path": "result\\comment_db0735ce-9b91-49e4-9d05-5e3828115744_result.xlsx",
+    "filename": "comment_db0735ce-9b91-49e4-9d05-5e3828115744.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 4,
+        "谩骂": 2
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "f6f9b2bf-5634-4f77-968e-9d735bec8e66",
+    "audit_type": "cover",
+    "datetime": "2025-10-21 15:41:58",
+    "result_path": "result\\cover_f6f9b2bf-5634-4f77-968e-9d735bec8e66_result.xlsx",
+    "filename": "cover_f6f9b2bf-5634-4f77-968e-9d735bec8e66.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "违规": 2,
+        "正常": 8
+      },
+      "tags": {
+        "低俗": 1,
+        "封面问题": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "bd33c9eb-08e5-41c9-8fbf-4fdc5b28e446",
+    "audit_type": "comment",
+    "datetime": "2025-10-21 16:11:40",
+    "result_path": "result\\comment_bd33c9eb-08e5-41c9-8fbf-4fdc5b28e446_result.xlsx",
+    "filename": "comment_bd33c9eb-08e5-41c9-8fbf-4fdc5b28e446.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 4,
+        "谩骂": 1
+      }
+    },
+    "status": "completed"
   }
 ]

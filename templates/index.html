@@ -1,8 +1,3 @@
-# 修复后的完整代码
-
-## index.html
-
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -11,69 +6,39 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>AI智能内容巡检系统</title>
     <style>
-        /* 新增的Tooltip样式 */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-            cursor: help;
-            margin-left: 5px;
-            vertical-align: middle;
+        /* 所有CSS样式保持不变，这里为了简洁省略 */
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2c3e50;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --info-color: #3498db;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #e1e5e9;
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --transition: all 0.3s ease;
+            --radius: 8px;
         }
         
-        .tooltip .icon {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            line-height: 18px;
-            text-align: center;
-            border-radius: 50%;
-            background-color: #3498db;
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        
-        .tooltip .tooltip-text {
-            visibility: hidden;
-            width: 150px;
-            background-color: #2c3e50;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -75px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 12px;
-            font-weight: normal;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        
-        .tooltip .tooltip-text::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #2c3e50 transparent transparent transparent;
-        }
-        
-        .tooltip:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-       body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
         }
         
         .container {
@@ -83,11 +48,13 @@
         }
         
         header {
-            background-color: #2c3e50;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 20px;
+            padding: 25px 20px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
         }
@@ -99,76 +66,133 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(41, 128, 185, 0.3), rgba(44, 62, 80, 0.3));
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.05)"/></svg>');
+            background-size: cover;
             z-index: 1;
         }
         
         header h1 {
             position: relative;
             z-index: 2;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5px;
         }
         
-        h1 {
-            margin: 0;
-            font-size: 24px;
+        .header-subtitle {
+            position: relative;
+            z-index: 2;
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
         }
         
         .tabs {
             display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
             flex-wrap: wrap;
+            gap: 5px;
         }
         
         .tab {
-            padding: 10px 20px;
+            padding: 12px 24px;
             cursor: pointer;
-            background-color: #f8f8f8;
-            border: 1px solid #ddd;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-bottom: none;
-            margin-right: 5px;
-            border-radius: 5px 5px 0 0;
-            transition: all 0.3s ease;
-            margin-bottom: 5px;
+            border-radius: var(--radius) var(--radius) 0 0;
+            transition: var(--transition);
+            margin-bottom: 0;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: var(--primary-color);
+            transition: var(--transition);
+            transform: translateX(-50%);
         }
         
         .tab.active {
-            background-color: #4a90e2;
-            color: white;
-            border-color: #4a90e2;
+            background-color: var(--card-bg);
+            color: var(--primary-color);
+            border-color: var(--border-color);
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .tab.active::after {
+            width: 100%;
+        }
+        
+        .tab:hover:not(.active) {
+            background-color: #f8f9fa;
+            color: var(--primary-dark);
         }
         
         .tab-content {
             display: none;
-            padding: 20px;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 0 0 5px 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 25px;
+            background-color: var(--card-bg);
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .tab-content.active {
             display: block;
         }
         
+        .tab-content h3 {
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+            font-weight: 600;
+            font-size: 22px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
         
         input[type="text"],
         input[type="file"],
         input[type="date"] {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
             box-sizing: border-box;
+            transition: var(--transition);
+            font-family: inherit;
+            font-size: 15px;
+        }
+        
+        input[type="text"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
         }
         
         .file-upload {
@@ -190,185 +214,280 @@
         }
         
         .file-upload-btn {
-            display: inline-block;
-            padding: 8px 16px;
-            background-color: #4a90e2;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--radius);
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: var(--transition);
+            font-weight: 500;
         }
         
         .file-upload-btn:hover {
-            background-color: #3a80d2;
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
         }
         
         .file-name {
-            margin-top: 5px;
+            margin-top: 8px;
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-radius: var(--radius);
+            border-left: 3px solid var(--primary-color);
         }
         
         .progress-container {
-            margin: 20px 0;
+            margin: 25px 0;
             background-color: #f0f0f0;
-            border-radius: 4px;
+            border-radius: 10px;
             overflow: hidden;
-            height: 20px;
+            height: 12px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
         
         .progress-bar {
-            height: 20px;
-            background: linear-gradient(90deg, #4a90e2, #5cb85c);
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-image: linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0.2) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 20px 20px;
+            animation: moveStripes 1s linear infinite;
+        }
+        
+        @keyframes moveStripes {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 0; }
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
         }
         
         .status-message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 4px;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: var(--radius);
             background-color: #e8f4fd;
-            border-left: 4px solid #4a90e2;
+            border-left: 4px solid var(--primary-color);
+            transition: var(--transition);
         }
         
         .status-message.error {
             background-color: #fde8e8;
-            border-left-color: #e74c3c;
+            border-left-color: var(--danger-color);
         }
         
         .status-message.success {
             background-color: #e8fde8;
-            border-left-color: #2ecc71;
+            border-left-color: var(--success-color);
         }
         
         .status-message.warning {
             background-color: #fdf6e8;
-            border-left-color: #f39c12;
+            border-left-color: var(--warning-color);
+        }
+        
+        .status-message.info {
+            background-color: #e8f4fd;
+            border-left-color: var(--info-color);
         }
         
         .button-group {
-            margin: 20px 0;
+            margin: 25px 0;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
         }
         
         button {
-            padding: 8px 16px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--radius);
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            min-width: 100px;
+            font-weight: 600;
+            transition: var(--transition);
+            min-width: 120px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
         }
         
         button:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-hover);
         }
         
         button:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
         }
         
         .btn-primary {
-            background-color: #4a90e2;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
         }
         
         .btn-warning {
-            background-color: #f39c12;
+            background: linear-gradient(135deg, var(--warning-color), #e67e22);
             color: white;
+        }
+        
+        .btn-warning:hover:not(:disabled) {
+            background: linear-gradient(135deg, #e67e22, var(--warning-color));
         }
         
         .btn-success {
-            background-color: #2ecc71;
+            background: linear-gradient(135deg, var(--success-color), #27ae60);
             color: white;
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            background: linear-gradient(135deg, #27ae60, var(--success-color));
         }
         
         .btn-danger {
-            background-color: #e74c3c;
+            background: linear-gradient(135deg, var(--danger-color), #c0392b);
             color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: linear-gradient(135deg, #c0392b, var(--danger-color));
         }
         
         .btn-info {
-            background-color: #3498db;
+            background: linear-gradient(135deg, var(--info-color), var(--primary-dark));
             color: white;
             text-decoration: none;
-            display: inline-block;
-            padding: 8px 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--radius);
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            min-width: 100px;
-            text-align: center;
+            font-weight: 600;
+            transition: var(--transition);
+            min-width: 120px;
+            font-size: 14px;
         }
         
         .btn-info:hover {
-            background-color: #2980b9;
+            background: linear-gradient(135deg, var(--primary-dark), var(--info-color));
             color: white;
             text-decoration: none;
-            transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .result-container {
             display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            padding: 25px;
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.5s ease;
         }
         
         .chart-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 25px;
         }
         
         .chart {
             flex: 1;
             min-width: 300px;
-            padding: 15px;
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            height: 300px; /* 固定高度，确保两个图表大小一致 */
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            height: 320px;
+            transition: var(--transition);
+        }
+        
+        .chart:hover {
+            box-shadow: var(--shadow);
+        }
+        
+        .chart h4 {
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
         }
         
         .history-item {
-            margin-bottom: 15px;
-            padding: 15px;
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary-color);
         }
         
         .history-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
         }
         
         .history-item h4 {
             margin-top: 0;
-            color: #4a90e2;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 10px;
         }
         
         .history-item p {
-            margin: 5px 0;
+            margin: 8px 0;
+            color: var(--text-secondary);
         }
         
         .history-item a {
-            color: #4a90e2;
+            color: var(--primary-color);
             text-decoration: none;
+            font-weight: 500;
         }
         
         .history-item a:hover {
@@ -379,19 +498,20 @@
         .ai-badge {
             display: inline-block;
             margin-left: 10px;
-            padding: 2px 8px;
-            background-color: #3498db;
+            padding: 4px 10px;
+            background-color: rgba(255, 255, 255, 0.2);
             color: white;
-            border-radius: 10px;
+            border-radius: 20px;
             font-size: 12px;
             vertical-align: middle;
+            backdrop-filter: blur(5px);
         }
         
         .ai-icon {
             display: inline-block;
-            width: 24px;
-            height: 24px;
-            margin-right: 8px;
+            width: 28px;
+            height: 28px;
+            margin-right: 10px;
             vertical-align: middle;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>');
             background-repeat: no-repeat;
@@ -400,20 +520,20 @@
         
         /* 历史记录页面的新增样式 */
         .history-stats {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
         
         /* 新增时间筛选器样式 */
         .time-filter {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
         
         .filter-row {
@@ -435,24 +555,25 @@
         
         .filter-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
         
         .quick-filter-btn {
-            padding: 6px 12px;
-            border: 1px solid #4a90e2;
+            padding: 8px 15px;
+            border: 1px solid var(--primary-color);
             background: white;
-            color: #4a90e2;
-            border-radius: 4px;
+            color: var(--primary-color);
+            border-radius: var(--radius);
             cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
+            font-size: 13px;
+            transition: var(--transition);
+            font-weight: 500;
         }
         
         .quick-filter-btn.active,
         .quick-filter-btn:hover {
-            background: #4a90e2;
+            background: var(--primary-color);
             color: white;
         }
         
@@ -460,7 +581,9 @@
         .stats-table-container {
             width: 100%;
             overflow-x: auto;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
         .stats-table {
@@ -471,15 +594,15 @@
         
         .stats-table th,
         .stats-table td {
-            padding: 12px 15px;
+            padding: 15px;
             text-align: center;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--border-color);
         }
         
         .stats-table th {
             background-color: #f8f9fa;
-            font-weight: bold;
-            color: #495057;
+            font-weight: 600;
+            color: var(--text-primary);
         }
         
         .stats-table tr:nth-child(even) {
@@ -492,12 +615,12 @@
         
         .stats-table .value {
             font-size: 18px;
-            font-weight: bold;
-            color: #4a90e2;
+            font-weight: 700;
+            color: var(--primary-color);
         }
         
         .stats-table .stats-header {
-            background-color: #4a90e2;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
         }
         
@@ -505,47 +628,136 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 20px 0;
+            margin: 25px 0;
             gap: 10px;
         }
         
         .pagination-info {
             margin: 0 15px;
-            color: #6c757d;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
         
         /* 调整导出按钮位置 - 移到图表下方 */
         .export-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 25px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
         
         .export-section h4 {
             margin-top: 0;
             margin-bottom: 15px;
-            color: #4a90e2;
+            color: var(--primary-color);
+            font-weight: 600;
         }
         
         .export-options {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
+        }
+        
+        /* 新增的Tooltip样式 */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+        
+        .tooltip .icon {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 180px;
+            background-color: var(--secondary-color);
+            color: #fff;
+            text-align: center;
+            border-radius: var(--radius);
+            padding: 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -90px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 13px;
+            font-weight: normal;
+            box-shadow: var(--shadow);
+            line-height: 1.5;
+        }
+        
+        .tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--secondary-color) transparent transparent transparent;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
         }
         
         /* 版权信息 */
         footer {
-            margin-top: 30px;
-            padding: 15px 0;
+            margin-top: 40px;
+            padding: 20px 0;
             text-align: center;
-            font-size: 12px;
-            color: #777;
-            border-top: 1px solid #eee;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
         }
         
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 响应式设计 */
         @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            header {
+                padding: 20px 15px;
+            }
+            
+            header h1 {
+                font-size: 24px;
+            }
+            
             .chart-container {
                 flex-direction: column;
             }
@@ -558,7 +770,7 @@
                 flex-direction: column;
             }
             
-            button {
+            button, .btn-info {
                 width: 100%;
             }
             
@@ -569,17 +781,17 @@
             .tab {
                 margin-right: 0;
                 margin-bottom: 5px;
-                border-radius: 4px;
-                border: 1px solid #ddd;
+                border-radius: var(--radius);
+                border: 1px solid var(--border-color);
             }
             
             .tab.active {
-                border-radius: 4px 4px 0 0;
+                border-radius: var(--radius) var(--radius) 0 0;
             }
             
             .stats-table th,
             .stats-table td {
-                padding: 8px 10px;
+                padding: 10px 8px;
                 font-size: 14px;
             }
             
@@ -595,12 +807,52 @@
             .filter-group {
                 min-width: 100%;
             }
+            
+            .tab-content {
+                padding: 20px;
+            }
+        }
+        
+        /* 暗色模式支持 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --light-bg: #1a1d23;
+                --card-bg: #252a33;
+                --border-color: #3a414d;
+                --text-primary: #e4e6eb;
+                --text-secondary: #b0b3b8;
+            }
+            
+            input[type="text"],
+            input[type="file"],
+            input[type="date"] {
+                background-color: #2d333d;
+                color: var(--text-primary);
+                border-color: #3a414d;
+            }
+            
+            .file-name {
+                background-color: #2d333d;
+            }
+            
+            .progress-container {
+                background-color: #2d333d;
+            }
+            
+            .stats-table th {
+                background-color: #2d333d;
+            }
+            
+            .stats-table tr:nth-child(even) {
+                background-color: #2d333d;
+            }
         }
     </style>
 </head>
 <body>
     <header>
         <h1><span class="ai-icon"></span>AI智能内容巡检系统<span class="ai-badge">智能分析</span></h1>
+        <div class="header-subtitle">自动化内容审核与质量检测平台</div>
     </header>  
     
     <div class="container">
@@ -608,8 +860,8 @@
             <div class="tab active" data-tab="comment">智能评论巡检</div>
             <div class="tab" data-tab="cover">智能封面巡检</div>
             <div class="tab" data-tab="push">智慧Push巡检</div>
-            <!-- 新增品牌守护巡检标签 -->
             <div class="tab" data-tab="brand">品牌守护巡检</div>
+            <div class="tab" data-tab="news">资讯巡检</div>
             <div class="tab" data-tab="history">历史记录</div>
         </div>
         
@@ -618,13 +870,12 @@
             <h3>评论内容审核</h3>
             
             <div class="form-group">
-                <!-- 修改点1：添加tooltip -->
                 <label for="comment-api-key">
                     Agent API密钥 
                     <span style="color: red;">*</span>
                     <span class="tooltip">
                         <span class="icon">?</span>
-                        <span class="tooltip-text">九问Bot API密钥</span>
+                        <span class="tooltip-text">九问Bot API密钥，用于评论内容审核</span>
                     </span>
                 </label>
                 <input type="text" id="comment-api-key" placeholder="请输入API密钥">
@@ -632,7 +883,12 @@
             <div class="form-group">
                 <label>上传数据进行AI评论巡检</label>
                 <div class="file-upload">
-                    <button class="file-upload-btn">选择文件</button>
+                    <button class="file-upload-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                        </svg>
+                        选择文件
+                    </button>
                     <input type="file" id="comment-file" accept=".xlsx, .xls">
                 </div>
                 <div class="file-name" id="comment-file-name"></div>
@@ -641,20 +897,58 @@
             <div class="progress-container">
                 <div class="progress-bar" id="comment-progress-bar-fill"></div>
             </div>
-            <div id="comment-progress-text">0% (0/0)</div>
+            <div class="progress-info">
+                <span id="comment-progress-text">0% (0/0)</span>
+                <span id="comment-speed">-</span>
+            </div>
             
             <div class="status-message" id="comment-status-message">
                 请上传Excel文件并输入API密钥
             </div>
             
             <div class="button-group">
-                <button id="comment-start-btn" class="btn-primary" disabled>开始巡检</button>
-                <button id="comment-pause-btn" class="btn-warning" disabled>暂停</button>
-                <button id="comment-resume-btn" class="btn-warning" disabled>继续</button>
-                <button id="comment-finish-btn" class="btn-success" disabled>完成</button>
-                <button id="comment-end-btn" class="btn-danger" disabled>结束任务</button>
-                <button id="comment-analyze-btn" class="btn-info" disabled>分析结果</button>
-                <button id="comment-download-btn" class="btn-info" disabled>下载结果</button>
+                <button id="comment-start-btn" class="btn-primary" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    开始巡检
+                </button>
+                <button id="comment-pause-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                    暂停
+                </button>
+                <button id="comment-resume-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    继续
+                </button>
+                <button id="comment-finish-btn" class="btn-success" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                    </svg>
+                    完成
+                </button>
+                <button id="comment-end-btn" class="btn-danger" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    结束任务
+                </button>
+                <button id="comment-analyze-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    分析结果
+                </button>
+                <button id="comment-download-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    下载结果
+                </button>
             </div>
             
             <div id="comment-result-container" class="result-container">
@@ -677,13 +971,12 @@
             <h3>封面图片审核</h3>
             
             <div class="form-group">
-                <!-- 修改点2：添加tooltip -->
                 <label for="cover-api-key">
                     Agent API密钥 
                     <span style="color: red;">*</span>
                     <span class="tooltip">
                         <span class="icon">?</span>
-                        <span class="tooltip-text">九问Bot API密钥</span>
+                        <span class="tooltip-text">九问Bot API密钥，用于封面图片审核</span>
                     </span>
                 </label>
                 <input type="text" id="cover-api-key" placeholder="请输入API密钥">
@@ -692,7 +985,12 @@
             <div class="form-group">
                 <label>上传数据进行AI封面巡检</label>
                 <div class="file-upload">
-                    <button class="file-upload-btn">选择文件</button>
+                    <button class="file-upload-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                        </svg>
+                        选择文件
+                    </button>
                     <input type="file" id="cover-file" accept=".xlsx, .xls">
                 </div>
                 <div class="file-name" id="cover-file-name"></div>
@@ -701,20 +999,58 @@
             <div class="progress-container">
                 <div class="progress-bar" id="cover-progress-bar-fill"></div>
             </div>
-            <div id="cover-progress-text">0% (0/0)</div>
+            <div class="progress-info">
+                <span id="cover-progress-text">0% (0/0)</span>
+                <span id="cover-speed">-</span>
+            </div>
             
             <div class="status-message" id="cover-status-message">
                 请上传Excel文件并输入API密钥
             </div>
             
             <div class="button-group">
-                <button id="cover-start-btn" class="btn-primary" disabled>开始巡检</button>
-                <button id="cover-pause-btn" class="btn-warning" disabled>暂停</button>
-                <button id="cover-resume-btn" class="btn-warning" disabled>继续</button>
-                <button id="cover-finish-btn" class="btn-success" disabled>完成</button>
-                <button id="cover-end-btn" class="btn-danger" disabled>结束任务</button>
-                <button id="cover-analyze-btn" class="btn-info" disabled>分析结果</button>
-                <button id="cover-download-btn" class="btn-info" disabled>下载结果</button>
+                <button id="cover-start-btn" class="btn-primary" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    开始巡检
+                </button>
+                <button id="cover-pause-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                    暂停
+                </button>
+                <button id="cover-resume-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    继续
+                </button>
+                <button id="cover-finish-btn" class="btn-success" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                    </svg>
+                    完成
+                </button>
+                <button id="cover-end-btn" class="btn-danger" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    结束任务
+                </button>
+                <button id="cover-analyze-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    分析结果
+                </button>
+                <button id="cover-download-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    下载结果
+                </button>
             </div>
             
             <div id="cover-result-container" class="result-container">
@@ -732,7 +1068,7 @@
             </div>
         </div>
 
-         <!-- 智慧push巡检标签页 -->
+        <!-- 智慧push巡检标签页 -->
         <div id="push-tab" class="tab-content">
             <h3>智慧Push内容巡检</h3>
         
@@ -742,7 +1078,7 @@
                     <span style="color: red;">*</span>
                     <span class="tooltip">
                         <span class="icon">?</span>
-                        <span class="tooltip-text">九问Bot API密钥</span>
+                        <span class="tooltip-text">九问Bot API密钥，用于智慧Push内容审核</span>
                     </span>
                 </label>
                 <input type="text" id="push-api-key" placeholder="请输入API密钥">
@@ -751,7 +1087,12 @@
             <div class="form-group">
                 <label>上传数据进行AI智慧Push巡检</label>
                 <div class="file-upload">
-                    <button class="file-upload-btn">选择文件</button>
+                    <button class="file-upload-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                        </svg>
+                        选择文件
+                    </button>
                     <input type="file" id="push-file" accept=".xlsx, .xls">
                 </div>
                 <div class="file-name" id="push-file-name"></div>
@@ -760,20 +1101,58 @@
             <div class="progress-container">
                 <div class="progress-bar" id="push-progress-bar-fill"></div>
             </div>
-            <div id="push-progress-text">0% (0/0)</div>
+            <div class="progress-info">
+                <span id="push-progress-text">0% (0/0)</span>
+                <span id="push-speed">-</span>
+            </div>
             
             <div class="status-message" id="push-status-message">
                 请上传Excel文件并输入API密钥
             </div>
             
             <div class="button-group">
-                <button id="push-start-btn" class="btn-primary" disabled>开始巡检</button>
-                <button id="push-pause-btn" class="btn-warning" disabled>暂停</button>
-                <button id="push-resume-btn" class="btn-warning" disabled>继续</button>
-                <button id="push-finish-btn" class="btn-success" disabled>完成</button>
-                <button id="push-end-btn" class="btn-danger" disabled>结束任务</button>
-                <button id="push-analyze-btn" class="btn-info" disabled>分析结果</button>
-                <button id="push-download-btn" class="btn-info" disabled>下载结果</button>
+                <button id="push-start-btn" class="btn-primary" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    开始巡检
+                </button>
+                <button id="push-pause-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                    暂停
+                </button>
+                <button id="push-resume-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    继续
+                </button>
+                <button id="push-finish-btn" class="btn-success" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                    </svg>
+                    完成
+                </button>
+                <button id="push-end-btn" class="btn-danger" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    结束任务
+                </button>
+                <button id="push-analyze-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    分析结果
+                </button>
+                <button id="push-download-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    下载结果
+                </button>
             </div>
             
             <div id="push-result-container" class="result-container">
@@ -801,7 +1180,7 @@
                     <span style="color: red;">*</span>
                     <span class="tooltip">
                         <span class="icon">?</span>
-                        <span class="tooltip-text">九问Bot API密钥</span>
+                        <span class="tooltip-text">九问Bot API密钥，用于品牌守护内容审核</span>
                     </span>
                 </label>
                 <input type="text" id="brand-api-key" placeholder="请输入API密钥">
@@ -810,7 +1189,12 @@
             <div class="form-group">
                 <label>上传数据进行AI品牌守护巡检</label>
                 <div class="file-upload">
-                    <button class="file-upload-btn">选择文件</button>
+                    <button class="file-upload-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                        </svg>
+                        选择文件
+                    </button>
                     <input type="file" id="brand-file" accept=".xlsx, .xls">
                 </div>
                 <div class="file-name" id="brand-file-name"></div>
@@ -819,20 +1203,58 @@
             <div class="progress-container">
                 <div class="progress-bar" id="brand-progress-bar-fill"></div>
             </div>
-            <div id="brand-progress-text">0% (0/0)</div>
+            <div class="progress-info">
+                <span id="brand-progress-text">0% (0/0)</span>
+                <span id="brand-speed">-</span>
+            </div>
             
             <div class="status-message" id="brand-status-message">
                 请上传Excel文件并输入API密钥
             </div>
             
             <div class="button-group">
-                <button id="brand-start-btn" class="btn-primary" disabled>开始巡检</button>
-                <button id="brand-pause-btn" class="btn-warning" disabled>暂停</button>
-                <button id="brand-resume-btn" class="btn-warning" disabled>继续</button>
-                <button id="brand-finish-btn" class="btn-success" disabled>完成</button>
-                <button id="brand-end-btn" class="btn-danger" disabled>结束任务</button>
-                <button id="brand-analyze-btn" class="btn-info" disabled>分析结果</button>
-                <button id="brand-download-btn" class="btn-info" disabled>下载结果</button>
+                <button id="brand-start-btn" class="btn-primary" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    开始巡检
+                </button>
+                <button id="brand-pause-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                    暂停
+                </button>
+                <button id="brand-resume-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    继续
+                </button>
+                <button id="brand-finish-btn" class="btn-success" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                    </svg>
+                    完成
+                </button>
+                <button id="brand-end-btn" class="btn-danger" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    结束任务
+                </button>
+                <button id="brand-analyze-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    分析结果
+                </button>
+                <button id="brand-download-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    下载结果
+                </button>
             </div>
             
             <div id="brand-result-container" class="result-container">
@@ -849,7 +1271,133 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- 资讯巡检标签页 -->
+        <div id="news-tab" class="tab-content">
+            <h3>资讯内容巡检（图片+文本）</h3>
+            
+            <div class="form-group">
+                <label for="news-api-key-agent1">
+                    Agent1 API密钥 (信息读取) 
+                    <span style="color: red;">*</span>
+                    <span class="tooltip">
+                        <span class="icon">?</span>
+                        <span class="tooltip-text">资讯信息读取Agent API密钥，同时提取图片和文本</span>
+                    </span>
+                </label>
+                <input type="text" id="news-api-key-agent1" placeholder="请输入Agent1 API密钥">
+            </div>
+            
+            <div class="form-group">
+                <label for="news-api-key-agent2">
+                    Agent2 API密钥 (图片审核) 
+                    <span style="color: red;">*</span>
+                    <span class="tooltip">
+                        <span class="icon">?</span>
+                        <span class="tooltip-text">图片内容审核Agent API密钥</span>
+                    </span>
+                </label>
+                <input type="text" id="news-api-key-agent2" placeholder="请输入Agent2 API密钥">
+            </div>
+            
+            <div class="form-group">
+                <label for="news-api-key-agent3">
+                    Agent3 API密钥 (文本审核) 
+                    <span style="color: red;">*</span>
+                    <span class="tooltip">
+                        <span class="icon">?</span>
+                        <span class="tooltip-text">文本内容审核Agent API密钥</span>
+                    </span>
+                </label>
+                <input type="text" id="news-api-key-agent3" placeholder="请输入Agent3 API密钥">
+            </div>
+            
+            <div class="form-group">
+                <label>上传数据进行资讯巡检</label>
+                <div class="file-upload">
+                    <button class="file-upload-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                        </svg>
+                        选择文件
+                    </button>
+                    <input type="file" id="news-file" accept=".xlsx, .xls">
+                </div>
+                <div class="file-name" id="news-file-name"></div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="news-progress-bar-fill"></div>
+            </div>
+            <div class="progress-info">
+                <span id="news-progress-text">0% (0/0)</span>
+                <span id="news-speed">-</span>
+            </div>
+            
+            <div class="status-message" id="news-status-message">
+                请上传Excel文件并输入三个Agent的API密钥
+            </div>
+            
+            <div class="button-group">
+                <button id="news-start-btn" class="btn-primary" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    开始巡检
+                </button>
+                <button id="news-pause-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                    </svg>
+                    暂停
+                </button>
+                <button id="news-resume-btn" class="btn-warning" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    继续
+                </button>
+                <button id="news-finish-btn" class="btn-success" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                    </svg>
+                    完成
+                </button>
+                <button id="news-end-btn" class="btn-danger" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    结束任务
+                </button>
+                <button id="news-analyze-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    分析结果
+                </button>
+                <button id="news-download-btn" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    下载结果
+                </button>
+            </div>
+            
+            <div id="news-result-container" class="result-container">
+                <h3>资讯巡检结果分析（图片+文本）</h3>
+                <div class="chart-container">
+                    <div class="chart">
+                        <h4>综合审核结果分布</h4>
+                        <canvas id="news-result-chart"></canvas>
+                    </div>
+                    <div class="chart">
+                        <h4>违规标签分布</h4>
+                        <canvas id="news-tag-chart"></canvas>
+                    </div>
+                 </div>
+              </div>
+           </div>
+
         <!-- 历史记录标签页 -->
         <div id="history-tab" class="tab-content">
             <h3>历史审核记录</h3>
@@ -876,7 +1424,12 @@
                         </div>
                     </div>
                     <div class="filter-group">
-                        <button id="apply-filter" class="btn-primary">应用筛选</button>
+                        <button id="apply-filter" class="btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                            </svg>
+                            应用筛选
+                        </button>
                     </div>
                 </div>
             </div>
@@ -896,7 +1449,7 @@
                                 <th>封面审核</th>
                                 <th>Push审核</th>
                                 <th>品牌守护</th>
-                                <!-- 预留位置给未来新增的审核类型 -->
+                                <th>资讯巡检</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -907,6 +1460,7 @@
                                 <td><div class="value" id="stats-cover">0</div></td>
                                 <td><div class="value" id="stats-push">0</div></td>
                                 <td><div class="value" id="stats-brand">0</div></td>
+                                <td><div class="value" id="stats-news">0</div></td>
                             </tr>
                         </tbody>
                     </table>
@@ -924,6 +1478,7 @@
                                 <th>封面审核</th>
                                 <th>Push审核</th>
                                 <th>品牌守护</th>
+                                <th>资讯巡检</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -934,6 +1489,7 @@
                                 <td><div class="value" id="volume-cover">0</div></td>
                                 <td><div class="value" id="volume-push">0</div></td>
                                 <td><div class="value" id="volume-brand">0</div></td>
+                                <td><div class="value" id="volume-news">0</div></td>
                             </tr>
                         </tbody>
                     </table>
@@ -945,7 +1501,7 @@
                         <canvas id="history-type-chart"></canvas>
                     </div>
                     <div class="chart">
-                        <h4>任务时间分布(最近30天)</h4>
+                        <h4>任务时间分布</h4>
                         <canvas id="history-date-chart"></canvas>
                     </div>
                 </div>
@@ -955,8 +1511,18 @@
             <div class="export-section">
                 <h4>数据导出</h4>
                 <div class="export-options">
-                    <button id="history-export-json" class="btn-info">导出JSON</button>
-                    <button id="history-export-csv" class="btn-info">导出CSV</button>
+                    <button id="history-export-json" class="btn-info">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        导出JSON
+                    </button>
+                    <button id="history-export-csv" class="btn-info">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        导出CSV
+                    </button>
                 </div>
             </div>
             
@@ -965,15 +1531,25 @@
             
             <!-- 分页控件 -->
             <div class="pagination">
-                <button id="history-prev-page" class="btn-info" disabled>上一页</button>
+                <button id="history-prev-page" class="btn-info" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                    </svg>
+                    上一页
+                </button>
                 <span class="pagination-info" id="history-page-info">第 1 页，共 1 页</span>
-                <button id="history-next-page" class="btn-info" disabled>下一页</button>
+                <button id="history-next-page" class="btn-info" disabled>
+                    下一页
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                    </svg>
+                </button>
             </div>
         </div>
         
         <!-- 版权信息 -->
         <footer>
-            Copyright © 2025 互联网测试中心. All rights reserved. Version v1.0.2
+            Copyright © 2025 互联网测试中心. All rights reserved. Version v1.0.3
         </footer>
     </div>
    
@@ -982,7 +1558,7 @@
             // 生成唯一会话ID
             const sessionId = generateUUID();
             console.log('会话ID:', sessionId);
-        
+            
             // 在函数开头添加Chart.js检查   
             function checkChartAvailable() {
                 if (typeof Chart === 'undefined') {
@@ -1162,7 +1738,7 @@
             }
             
             // 初始化所有审核类型
-            const auditTypes = ['comment', 'cover', 'push', 'brand'];
+            const auditTypes = ['comment', 'cover', 'push', 'brand', 'news']; // 添加news类型
             auditTypes.forEach(type => {
                 initializeAuditType(type);
                 
@@ -1192,9 +1768,20 @@
                         fileName.textContent = file.name;
                         
                         // 检查API密钥
-                        const apiKey = document.getElementById(`${type}-api-key`).value.trim();
-                        if (apiKey) {
-                            startButton.disabled = false;
+                        if (type === 'news') {
+                            // 资讯巡检需要检查三个API密钥
+                            const apiKey1 = document.getElementById(`${type}-api-key-agent1`).value.trim();
+                            const apiKey2 = document.getElementById(`${type}-api-key-agent2`).value.trim();
+                            const apiKey3 = document.getElementById(`${type}-api-key-agent3`).value.trim();
+                            if (apiKey1 && apiKey2 && apiKey3) {
+                                startButton.disabled = false;
+                            }
+                        } else {
+                            // 其他类型只需要一个API密钥
+                            const apiKey = document.getElementById(`${type}-api-key`).value.trim();
+                            if (apiKey) {
+                                startButton.disabled = false;
+                            }
                         }
                         
                         // 上传文件
@@ -1202,26 +1789,49 @@
                     }
                 });
                 
-                // API密钥输入事件
-                document.getElementById(`${type}-api-key`).addEventListener('input', function() {
-                    const apiKey = this.value.trim();
-                    const hasFile = fileInput.files.length > 0;
-                    
-                    if (apiKey && hasFile) {
-                        startButton.disabled = false;
-                    } else {
-                        startButton.disabled = true;
-                    }
-                });
+                // API密钥输入事件 - 处理不同类型
+                if (type === 'news') {
+                    // 资讯巡检需要监听三个API密钥输入框
+                    document.getElementById(`${type}-api-key-agent1`).addEventListener('input', checkNewsApiKeys);
+                    document.getElementById(`${type}-api-key-agent2`).addEventListener('input', checkNewsApiKeys);
+                    document.getElementById(`${type}-api-key-agent3`).addEventListener('input', checkNewsApiKeys);
+                } else {
+                    // 其他类型只需要一个API密钥
+                    document.getElementById(`${type}-api-key`).addEventListener('input', function() {
+                        const apiKey = this.value.trim();
+                        const hasFile = fileInput.files.length > 0;
+                        
+                        if (apiKey && hasFile) {
+                            startButton.disabled = false;
+                        } else {
+                            startButton.disabled = true;
+                        }
+                    });
+                }
                 
                 // 开始任务按钮
                 startButton.addEventListener('click', () => {
-                    const apiKey = document.getElementById(`${type}-api-key`).value.trim();
-                    if (!apiKey) {
-                        showStatusMessage(type, 'API密钥不能为空', 'error');
-                        return;
+                    if (type === 'news') {
+                        // 资讯巡检需要三个API密钥
+                        const apiKey1 = document.getElementById(`${type}-api-key-agent1`).value.trim();
+                        const apiKey2 = document.getElementById(`${type}-api-key-agent2`).value.trim();
+                        const apiKey3 = document.getElementById(`${type}-api-key-agent3`).value.trim();
+                        if (!apiKey1 || !apiKey2 || !apiKey3) {
+                            showStatusMessage(type, '三个Agent的API密钥都不能为空', 'error');
+                            return;
+                        }
+                        // 将三个密钥用分隔符连接
+                        const combinedKey = `${apiKey1}|||${apiKey2}|||${apiKey3}`;
+                        runTask(type, combinedKey);
+                    } else {
+                        // 其他类型只需要一个API密钥
+                        const apiKey = document.getElementById(`${type}-api-key`).value.trim();
+                        if (!apiKey) {
+                            showStatusMessage(type, 'API密钥不能为空', 'error');
+                            return;
+                        }
+                        runTask(type, apiKey);
                     }
-                    runTask(type, apiKey);
                 });
                 
                 // 暂停任务按钮
@@ -1253,7 +1863,18 @@
                 downloadButton.addEventListener('click', () => {
                     window.location.href = `/download/${type}?session_id=${sessionId}`;
                 });
-            }           
+            }
+            
+            // 修改资讯巡检的API密钥检查函数
+            function checkNewsApiKeys() {
+                const apiKey1 = document.getElementById('news-api-key-agent1').value.trim();
+                const apiKey2 = document.getElementById('news-api-key-agent2').value.trim();
+                const apiKey3 = document.getElementById('news-api-key-agent3').value.trim();
+                const hasFile = document.getElementById('news-file').files.length > 0;
+                const startButton = document.getElementById('news-start-btn');
+    
+                startButton.disabled = !(apiKey1 && apiKey2 && apiKey3 && hasFile);
+            }
             
             // 上传文件
             function uploadFile(type, file) {
@@ -1396,7 +2017,7 @@
                 .catch(error => {
                     console.error('Error checking status:', error);
                 });
-            }           
+            }
             
             // 加载统计数据
             function loadStatistics(type) {
@@ -1583,7 +2204,8 @@
                             record.audit_type === 'comment' ? '评论审核' : 
                             record.audit_type === 'cover' ? '封面审核' : 
                             record.audit_type === 'push' ? '智慧Push审核' : 
-                            '品牌守护审核';
+                            record.audit_type === 'brand' ? '品牌守护审核' :
+                            '资讯巡检';  // 新增资讯巡检
                         
                         const historyItem = document.createElement('div');
                         historyItem.className = 'history-item';
@@ -1598,7 +2220,7 @@
                             <p>ID: ${record.id}</p>
                             <p>总记录数: ${record.total_rows || 0} | 
                                 正常: ${results.正常 || 0} | 
-                                低质: ${results.低质 || 0} | 
+                                ${record.audit_type === 'comment' || record.audit_type === 'push' ? '低质' : '违规'}: ${results.低质 || results.违规 || 0} | 
                                 处理失败: ${results.处理失败 || 0}
                             </p>
                             <div style="margin-top: 10px;">
@@ -1646,6 +2268,7 @@
                     document.getElementById('stats-cover').textContent = byType.cover || 0;
                     document.getElementById('stats-push').textContent = byType.push || 0;
                     document.getElementById('stats-brand').textContent = byType.brand || 0;
+                    document.getElementById('stats-news').textContent = byType.news || 0; // 新增资讯巡检统计
                     
                     // 修复巡检量级统计表格 - 使用正确的数据源
                     const byVolume = data.by_volume || {};
@@ -1654,6 +2277,7 @@
                     document.getElementById('volume-cover').textContent = byVolume.cover || 0;
                     document.getElementById('volume-push').textContent = byVolume.push || 0;
                     document.getElementById('volume-brand').textContent = byVolume.brand || 0;
+                    document.getElementById('volume-news').textContent = byVolume.news || 0; // 新增资讯巡检统计
                     
                     // 渲染图表
                     renderHistoryTypeChart(byType);
@@ -1683,7 +2307,8 @@
                     'comment': '评论审核',
                     'cover': '封面审核',
                     'push': 'Push审核',
-                    'brand': '品牌守护'
+                    'brand': '品牌守护',
+                    'news': '资讯巡检'  // 新增资讯巡检
                 };
                 
                 const labels = Object.keys(byType).map(key => typeLabels[key] || key);
@@ -1700,7 +2325,8 @@
                                 '#4a90e2',
                                 '#50e3c2',
                                 '#f0ad4e',
-                                '#d9534f'
+                                '#d9534f',
+                                '#5cb85c'  // 新增颜色
                             ]
                         }]
                     },
@@ -1730,17 +2356,31 @@
                     window.historyDateChart.destroy();
                 }
                 
-                // 准备数据（最近7天）
+                // 准备数据 - 根据选择的时间范围动态生成
                 const labels = [];
                 const data = [];
-                const today = new Date();
                 
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date(today);
-                    date.setDate(date.getDate() - i);
-                    const dateStr = date.toISOString().split('T')[0];
-                    labels.push(dateStr);
-                    data.push(byDate[dateStr] || 0);
+                // 判断是否有时间范围筛选
+                if (currentStartDate && currentEndDate) {
+                    // 使用选择的时间范围
+                    const startDate = new Date(currentStartDate);
+                    const endDate = new Date(currentEndDate);
+                    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                    
+                    for (let i = 0; i <= daysDiff; i++) {
+                        const date = new Date(startDate);
+                        date.setDate(startDate.getDate() + i);
+                        const dateStr = date.toISOString().split('T')[0];
+                        labels.push(dateStr);
+                        data.push(byDate[dateStr] || 0);
+                    }
+                } else {
+                    // 没有时间范围筛选,使用后端返回的所有日期数据
+                    const sortedDates = Object.keys(byDate).sort();
+                    sortedDates.forEach(dateStr => {
+                        labels.push(dateStr);
+                        data.push(byDate[dateStr] || 0);
+                    });
                 }
                 
                 // 创建图表
@@ -1866,7 +2506,7 @@
                 document.getElementById(`${type}-result-container`).style.display = 'none';
                 
                 // 重置状态消息
-                showStatusMessage(type, '请上传Excel文件并输入API密钥');
+                showStatusMessage(type, type === 'news' ? '请上传Excel文件并输入三个Agent的API密钥' : '请上传Excel文件并输入API密钥');
                 
                 // 清空文件输入
                 document.getElementById(`${type}-file`).value = '';

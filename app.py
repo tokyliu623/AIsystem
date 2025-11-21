@@ -472,7 +472,8 @@ def run_task():
         
         # 日志记录
         api_key_len = 0
-        if audit_type in ['push', 'comment']:
+        # ================ 修复：统一处理所有审核类型的API密钥 ================
+        if audit_type in ['push', 'comment', 'cover', 'brand']:
             if isinstance(api_keys, list) and len(api_keys) > 0:
                 api_key_len = len(api_keys)
             elif isinstance(api_key, str) and api_key.strip():
@@ -495,6 +496,7 @@ def run_task():
         # 问题 1 修复：移除网络请求验证，避免触发 429 错误
         # 仅保留非空检查
         if audit_type in ['comment', 'cover', 'push', 'brand']:
+            # ================ 修复：统一验证逻辑 ================
             if not api_keys or len(api_keys) == 0:
                 return jsonify({'error': 'API密钥不能为空'}), 400
             # 跳过 validate_api_key(api_key) 网络调用
@@ -519,14 +521,15 @@ def run_task():
         update_task_status(audit_type, session_id, status='processing', progress=0, message='开始处理...')
         
         # 启动处理线程
+        # ================ 修复：统一传递api_keys参数 ================
         if audit_type == 'comment':
             thread = threading.Thread(target=process_comment_file, args=(filename, api_keys, session_id))
         elif audit_type == 'cover':
-            thread = threading.Thread(target=process_cover_file, args=(filename, api_keys[0] if api_keys else '', session_id))
+            thread = threading.Thread(target=process_cover_file, args=(filename, api_keys, session_id))
         elif audit_type == 'push':
             thread = threading.Thread(target=process_push_file, args=(filename, api_keys, session_id))
         elif audit_type == 'brand':
-            thread = threading.Thread(target=process_brand_file, args=(filename, api_keys[0] if api_keys else '', session_id))
+            thread = threading.Thread(target=process_brand_file, args=(filename, api_keys, session_id))
         elif audit_type == 'news':
             thread = threading.Thread(target=process_news_file, args=(filename, api_key, session_id))
         
@@ -1548,13 +1551,20 @@ def extract_tags_from_content(content):
     return found_tags
 
 # ================ 其他巡检功能保持不变 ================
-def process_cover_file(filename, api_key, session_id):
-    """处理封面文件 - 使用传入的session_id而非Flask session"""
+
+def process_cover_file(filename, api_keys, session_id):
+    """处理封面文件 - 修复版，使用api_keys列表"""
     try:
+        # 确保api_keys不为空
+        if not api_keys or len(api_keys) == 0:
+            update_task_status('cover', session_id, status='error', message='API密钥不能为空')
+            return
+            
+        api_key = api_keys[0]  # 使用第一个密钥
+        
         # 读取Excel文件
         update_task_status('cover', session_id, message='读取文件中...')
-        df = pd.read_excel(filename, engine='openpyxl')# 直接指定使用openpyxl引擎
-        
+        df = pd.read_excel(filename, engine='openpyxl')
         
         # 检查必要的列
         if '封面链接' not in df.columns:
@@ -1781,9 +1791,19 @@ def process_cover(cover_url, api_key, index, session_id):
     
     return '处理失败', []
 
-def process_brand_file(filename, api_key, session_id):
-    """处理品牌守护文件"""
+
+# ================ 品牌守护审核功能 ================
+
+def process_brand_file(filename, api_keys, session_id):
+    """处理品牌守护文件 - 修复版，使用api_keys列表"""
     try:
+        # 确保api_keys不为空
+        if not api_keys or len(api_keys) == 0:
+            update_task_status('brand', session_id, status='error', message='API密钥不能为空')
+            return
+            
+        api_key = api_keys[0]  # 使用第一个密钥
+        
         # 读取Excel文件
         update_task_status('brand', session_id, message='读取文件中...')
         df = pd.read_excel(filename, engine='openpyxl')
@@ -1938,7 +1958,7 @@ def process_brand_content(content, api_key):
             time.sleep(2)
     
     return '处理失败', []
-
+    
 # ================ 资讯巡检功能保持不变 ================
 def process_news_file(filename, combined_api_key, session_id):
     """处理资讯巡检文件 - 最终修复版（集成图片尺寸检查）"""

@@ -962,5 +962,42 @@
       }
     },
     "status": "completed"
+  },
+  {
+    "id": "3fba0ee3-a46f-44dd-96db-4e012b9c40de",
+    "audit_type": "brand",
+    "datetime": "2025-11-21 09:22:25",
+    "result_path": "result\\brand_3fba0ee3-a46f-44dd-96db-4e012b9c40de_result.xlsx",
+    "filename": "brand_3fba0ee3-a46f-44dd-96db-4e012b9c40de.xlsx",
+    "total_rows": 9,
+    "statistics": {
+      "results": {
+        "违规": 9
+      },
+      "tags": {
+        "品牌负向": 8,
+        "用户负面体验": 2
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "7f92046b-6a5b-47c0-a6b1-6195261f1f17",
+    "audit_type": "cover",
+    "datetime": "2025-11-21 09:24:14",
+    "result_path": "result\\cover_7f92046b-6a5b-47c0-a6b1-6195261f1f17_result.xlsx",
+    "filename": "cover_7f92046b-6a5b-47c0-a6b1-6195261f1f17.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "违规": 3,
+        "正常": 7
+      },
+      "tags": {
+        "低俗": 1,
+        "封面问题": 2
+      }
+    },
+    "status": "completed"
   }
 ]

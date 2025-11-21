@@ -1,0 +1,21 @@
+{
+  "id": "38c3488e-5d74-4e77-937a-c5e2bf838d03",
+  "audit_type": "push",
+  "datetime": "2025-11-20 12:10:08",
+  "result_path": "result\\push_38c3488e-5d74-4e77-937a-c5e2bf838d03_result.xlsx",
+  "filename": "push_38c3488e-5d74-4e77-937a-c5e2bf838d03.xlsx",
+  "total_rows": 100,
+  "statistics": {
+    "results": {
+      "正常": 68,
+      "低质": 32
+    },
+    "tags": {
+      "标题党": 22,
+      "低俗": 3,
+      "文本低质": 10,
+      "劣迹艺人": 1
+    }
+  },
+  "status": "completed"
+}

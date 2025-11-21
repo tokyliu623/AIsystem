@@ -1,0 +1,21 @@
+{
+  "id": "0c88ea49-46cf-472d-91d7-ecf6ee0b4645",
+  "audit_type": "comment",
+  "datetime": "2025-11-20 11:49:05",
+  "result_path": "result\\comment_0c88ea49-46cf-472d-91d7-ecf6ee0b4645_result.xlsx",
+  "filename": "comment_0c88ea49-46cf-472d-91d7-ecf6ee0b4645.xlsx",
+  "total_rows": 10,
+  "statistics": {
+    "results": {
+      "低质": 4,
+      "正常": 6
+    },
+    "tags": {
+      "涉政": 3,
+      "色情": 1,
+      "低俗": 1,
+      "谩骂": 1
+    }
+  },
+  "status": "completed"
+}

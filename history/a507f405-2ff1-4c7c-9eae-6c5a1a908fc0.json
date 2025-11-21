@@ -1,0 +1,15 @@
+{
+  "id": "a507f405-2ff1-4c7c-9eae-6c5a1a908fc0",
+  "audit_type": "batch_push",
+  "datetime": "2025-11-19 19:17:07",
+  "result_path": "result\\batch_push_a507f405-2ff1-4c7c-9eae-6c5a1a908fc0_result.xlsx",
+  "filename": "batch_push_a507f405-2ff1-4c7c-9eae-6c5a1a908fc0.xlsx",
+  "total_rows": 100,
+  "statistics": {
+    "results": {
+      "处理失败": 100
+    },
+    "tags": {}
+  },
+  "status": "completed"
+}

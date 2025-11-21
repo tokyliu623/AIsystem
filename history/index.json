@@ -769,5 +769,198 @@
       }
     },
     "status": "completed"
+  },
+  {
+    "id": "6a36cfdf-78a5-4075-a342-31de32967053",
+    "audit_type": "comment",
+    "datetime": "2025-10-22 11:01:11",
+    "result_path": "result\\comment_6a36cfdf-78a5-4075-a342-31de32967053_result.xlsx",
+    "filename": "comment_6a36cfdf-78a5-4075-a342-31de32967053.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 3,
+        "谩骂": 2
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "8661f1d7-839e-43d8-90d6-19e9ff74f2f7",
+    "audit_type": "batch_push",
+    "datetime": "2025-11-19 17:55:38",
+    "result_path": "result\\batch_push_8661f1d7-839e-43d8-90d6-19e9ff74f2f7_result.xlsx",
+    "filename": "push_f2bce4d2-4c61-4743-8d3d-f3e73b76af51.xlsx",
+    "total_rows": 100,
+    "statistics": {
+      "results": {
+        "处理失败": 100
+      },
+      "tags": {}
+    },
+    "status": "completed"
+  },
+  {
+    "id": "571cd184-903b-40a2-a097-bd63e613d875",
+    "audit_type": "comment",
+    "datetime": "2025-11-19 19:14:41",
+    "result_path": "result\\comment_571cd184-903b-40a2-a097-bd63e613d875_result.xlsx",
+    "filename": "comment_571cd184-903b-40a2-a097-bd63e613d875.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 5,
+        "正常": 5
+      },
+      "tags": {
+        "涉政": 4,
+        "谩骂": 1,
+        "低俗": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "a507f405-2ff1-4c7c-9eae-6c5a1a908fc0",
+    "audit_type": "batch_push",
+    "datetime": "2025-11-19 19:17:07",
+    "result_path": "result\\batch_push_a507f405-2ff1-4c7c-9eae-6c5a1a908fc0_result.xlsx",
+    "filename": "batch_push_a507f405-2ff1-4c7c-9eae-6c5a1a908fc0.xlsx",
+    "total_rows": 100,
+    "statistics": {
+      "results": {
+        "处理失败": 100
+      },
+      "tags": {}
+    },
+    "status": "completed"
+  },
+  {
+    "id": "65183ff4-b8a8-4452-8922-a74ddeb69cc9",
+    "audit_type": "batch_push",
+    "datetime": "2025-11-20 09:35:21",
+    "result_path": "result\\batch_push_65183ff4-b8a8-4452-8922-a74ddeb69cc9_result.xlsx",
+    "filename": "batch_push_65183ff4-b8a8-4452-8922-a74ddeb69cc9.xlsx",
+    "total_rows": 100,
+    "statistics": {
+      "results": {
+        "正常": 73,
+        "低质": 27
+      },
+      "tags": {
+        "文本低质": 11,
+        "低俗": 2,
+        "标题党": 20,
+        "劣迹艺人": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "aa621c41-1e69-483f-a628-e93cd2b87402",
+    "audit_type": "batch_push",
+    "datetime": "2025-11-20 09:59:07",
+    "result_path": "result\\batch_push_aa621c41-1e69-483f-a628-e93cd2b87402_result.xlsx",
+    "filename": "batch_push_aa621c41-1e69-483f-a628-e93cd2b87402.xlsx",
+    "total_rows": 100,
+    "statistics": {
+      "results": {
+        "正常": 72,
+        "低质": 28
+      },
+      "tags": {
+        "文本低质": 13,
+        "标题党": 16,
+        "劣迹艺人": 1,
+        "低俗": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "b1bbf1de-dede-4642-919b-5c5406dc21e8",
+    "audit_type": "push",
+    "datetime": "2025-11-20 11:23:49",
+    "result_path": "result\\push_b1bbf1de-dede-4642-919b-5c5406dc21e8_result.xlsx",
+    "filename": "push_b1bbf1de-dede-4642-919b-5c5406dc21e8.xlsx",
+    "total_rows": 100,
+    "statistics": {
+      "results": {
+        "正常": 71,
+        "低质": 29
+      },
+      "tags": {
+        "文本低质": 9,
+        "标题党": 21,
+        "低俗": 2,
+        "劣迹艺人": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "782fa291-bb28-4084-9c2e-2a68ffa6e66b",
+    "audit_type": "comment",
+    "datetime": "2025-11-20 11:30:24",
+    "result_path": "result\\comment_782fa291-bb28-4084-9c2e-2a68ffa6e66b_result.xlsx",
+    "filename": "comment_782fa291-bb28-4084-9c2e-2a68ffa6e66b.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 4,
+        "正常": 6
+      },
+      "tags": {
+        "涉政": 3,
+        "谩骂": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "0c88ea49-46cf-472d-91d7-ecf6ee0b4645",
+    "audit_type": "comment",
+    "datetime": "2025-11-20 11:49:05",
+    "result_path": "result\\comment_0c88ea49-46cf-472d-91d7-ecf6ee0b4645_result.xlsx",
+    "filename": "comment_0c88ea49-46cf-472d-91d7-ecf6ee0b4645.xlsx",
+    "total_rows": 10,
+    "statistics": {
+      "results": {
+        "低质": 4,
+        "正常": 6
+      },
+      "tags": {
+        "涉政": 3,
+        "色情": 1,
+        "低俗": 1,
+        "谩骂": 1
+      }
+    },
+    "status": "completed"
+  },
+  {
+    "id": "38c3488e-5d74-4e77-937a-c5e2bf838d03",
+    "audit_type": "push",
+    "datetime": "2025-11-20 12:10:08",
+    "result_path": "result\\push_38c3488e-5d74-4e77-937a-c5e2bf838d03_result.xlsx",
+    "filename": "push_38c3488e-5d74-4e77-937a-c5e2bf838d03.xlsx",
+    "total_rows": 100,
+    "statistics": {
+      "results": {
+        "正常": 68,
+        "低质": 32
+      },
+      "tags": {
+        "标题党": 22,
+        "低俗": 3,
+        "文本低质": 10,
+        "劣迹艺人": 1
+      }
+    },
+    "status": "completed"
   }
 ]

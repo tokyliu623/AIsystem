@@ -425,6 +425,10 @@ def upload_file():
                 task_status[audit_type][session_id]['conversation_id'] = ''
                 task_status[audit_type][session_id]['subtasks'] = {}
                 task_status[audit_type][session_id]['completed_subtasks'] = 0
+         # 添加封面巡检的特殊字段初始化
+            elif audit_type == 'cover':
+               task_status[audit_type][session_id]['subtasks'] = {}
+               task_status[audit_type][session_id]['completed_subtasks'] = 0        
         
         if 'file' not in request.files:
             return jsonify({'error': '未找到文件'}), 400
@@ -525,14 +529,16 @@ def run_task():
         if audit_type == 'comment':
             thread = threading.Thread(target=process_comment_file, args=(filename, api_keys, session_id))
         elif audit_type == 'cover':
-            thread = threading.Thread(target=process_cover_file, args=(filename, api_keys, session_id))
+            if isinstance(api_keys, list) and len(api_keys) > 0:
+                thread = threading.Thread(target=process_cover_file, args=(filename, api_keys, session_id))
+            else:
+                thread = threading.Thread(target=process_cover_file_single, args=(filename, api_key, session_id))
         elif audit_type == 'push':
             thread = threading.Thread(target=process_push_file, args=(filename, api_keys, session_id))
         elif audit_type == 'brand':
             thread = threading.Thread(target=process_brand_file, args=(filename, api_keys, session_id))
         elif audit_type == 'news':
-            thread = threading.Thread(target=process_news_file, args=(filename, api_key, session_id))
-        
+            thread = threading.Thread(target=process_news_file, args=(filename, api_key, session_id))       
         thread.daemon = True
         thread.start()
         
@@ -767,6 +773,170 @@ def delete_history_record(history_id):
     except Exception as e:
         logger.error(f"删除历史记录失败: {e}")
         return jsonify({"error": f"删除失败: {e}"}), 500
+
+@app.route('/history/scan-and-restore', methods=['POST'])
+def scan_and_restore_history():
+    """扫描data和result目录，恢复缺失的历史记录"""
+    try:
+        import re
+        from datetime import datetime as dt
+        
+        valid_types = ['comment', 'cover', 'push', 'batch_push', 'brand', 'news']
+        
+        pattern_data = re.compile(r'^(comment|cover|push|batch_push|brand|news)_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.xlsx$', re.IGNORECASE)
+        pattern_result = re.compile(r'^(comment|cover|push|batch_push|brand|news)_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_result\.xlsx$', re.IGNORECASE)
+        
+        data_files = {}
+        for fname in os.listdir(UPLOAD_FOLDER):
+            m = pattern_data.match(fname)
+            if m:
+                audit_type = m.group(1).lower()
+                task_id = m.group(2).lower()
+                data_files[task_id] = {'type': audit_type, 'filename': fname, 'path': os.path.join(UPLOAD_FOLDER, fname)}
+        
+        result_files = {}
+        for fname in os.listdir(RESULT_FOLDER):
+            m = pattern_result.match(fname)
+            if m:
+                audit_type = m.group(1).lower()
+                task_id = m.group(2).lower()
+                result_files[task_id] = {'type': audit_type, 'filename': fname, 'path': os.path.join(RESULT_FOLDER, fname)}
+        
+        all_task_ids = set(list(data_files.keys()) + list(result_files.keys()))
+        
+        existing_index = []
+        if os.path.exists(HISTORY_INDEX_FILE):
+            try:
+                with open(HISTORY_INDEX_FILE, 'r', encoding='utf-8') as f:
+                    existing_index = json.load(f)
+            except:
+                existing_index = []
+        
+        existing_ids = set(r.get('id', '').lower() for r in existing_index)
+        
+        new_tasks = all_task_ids - existing_ids
+        restored = []
+        
+        for task_id in new_tasks:
+            try:
+                has_result = task_id in result_files
+                has_data = task_id in data_files
+                
+                audit_type = None
+                filename = ''
+                result_path = ''
+                file_mtime = None
+                
+                if has_result:
+                    audit_type = result_files[task_id]['type']
+                    filename = result_files[task_id]['filename']
+                    result_path = result_files[task_id]['path']
+                    file_mtime = os.path.getmtime(result_files[task_id]['path'])
+                elif has_data:
+                    audit_type = data_files[task_id]['type']
+                    filename = data_files[task_id]['filename']
+                    result_path = os.path.join(RESULT_FOLDER, "%s_%s_result.xlsx" % (audit_type, task_id))
+                    file_mtime = os.path.getmtime(data_files[task_id]['path'])
+                
+                if not audit_type:
+                    continue
+                
+                if file_mtime:
+                    record_datetime = dt.fromtimestamp(file_mtime).strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    record_datetime = dt.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                statistics = {'results': {}, 'tags': {}}
+                total_rows = 0
+                status = 'completed'
+                
+                if has_result:
+                    try:
+                        df = pd.read_excel(result_files[task_id]['path'], engine='openpyxl')
+                        total_rows = len(df)
+                        
+                        result_col = None
+                        for col_name in ['审核结果']:
+                            if col_name in df.columns:
+                                result_col = col_name
+                                break
+                        
+                        if result_col:
+                            result_counts = df[result_col].value_counts().to_dict()
+                            statistics['results'] = {str(k): int(v) for k, v in result_counts.items()}
+                        
+                        tag_col = None
+                        for col_name in ['违规标签', '低质标签']:
+                            if col_name in df.columns:
+                                tag_col = col_name
+                                break
+                        
+                        if tag_col:
+                            all_tags = []
+                            for val in df[tag_col].dropna():
+                                val_str = str(val).strip()
+                                if val_str and val_str != '/':
+                                    tags_split = [t.strip() for t in val_str.split(',') if t.strip()]
+                                    all_tags.extend(tags_split)
+                            
+                            if all_tags:
+                                from collections import Counter
+                                tag_counts = Counter(all_tags)
+                                statistics['tags'] = {str(k): int(v) for k, v in tag_counts.items()}
+                    except Exception as e:
+                        logger.warning("读取结果文件失败 %s: %s" % (result_files[task_id]['path'], str(e)))
+                        
+                    if not result_path.endswith('_result.xlsx'):
+                        result_path = os.path.join(RESULT_FOLDER, "%s_%s_result.xlsx" % (audit_type, task_id))
+                        
+                elif has_data:
+                    try:
+                        df = pd.read_excel(data_files[task_id]['path'], engine='openpyxl')
+                        total_rows = len(df)
+                    except:
+                        pass
+                    status = 'partial'
+                
+                history_entry = {
+                    'id': task_id,
+                    'audit_type': audit_type,
+                    'datetime': record_datetime,
+                    'result_path': result_path,
+                    'filename': filename.replace('_result.xlsx', '.xlsx') if '_result.xlsx' in filename else filename,
+                    'total_rows': total_rows,
+                    'statistics': statistics,
+                    'status': status
+                }
+                
+                existing_index.append(history_entry)
+                
+                history_file = os.path.join(HISTORY_DIR, f"{task_id}.json")
+                with open(history_file, 'w', encoding='utf-8') as f:
+                    json.dump(history_entry, f, ensure_ascii=False, indent=2)
+                
+                restored.append({
+                    'id': task_id,
+                    'type': audit_type,
+                    'has_result': has_result,
+                    'total_rows': total_rows
+                })
+                
+            except Exception as e:
+                logger.error("恢复任务 %s 失败: %s" % (task_id, str(e)))
+                continue
+        
+        with open(HISTORY_INDEX_FILE, 'w', encoding='utf-8') as f:
+            json.dump(existing_index, f, ensure_ascii=False, indent=2)
+        
+        return jsonify({
+            'restored': len(restored),
+            'details': restored,
+            'message': '成功恢复 %d 条历史记录' % len(restored)
+        })
+        
+    except Exception as e:
+        logger.error("扫描恢复历史记录错误: %s" % str(e))
+        return jsonify({'error': '扫描恢复失败: %s' % str(e)}), 500
 
 # ================ 多Agent智能评论巡检功能 ================
 def process_comment_file(filename, api_keys, session_id):
@@ -1550,9 +1720,324 @@ def extract_tags_from_content(content):
     
     return found_tags
 
+# ================ 多Agent智能封面巡检功能 ================
+def process_cover_file(filename, api_keys, session_id):
+    """处理封面文件 - 多Agent版本"""
+    try:
+        # 读取Excel文件
+        update_task_status('cover', session_id, message='读取文件中...')
+        df = pd.read_excel(filename, engine='openpyxl')
+        
+        # 检查必要的列
+        if '封面链接' not in df.columns:
+            update_task_status('cover', session_id, status='error', message='文件格式错误：缺少"封面链接"列')
+            return
+        
+        # 数据清洗
+        update_task_status('cover', session_id, message='开始数据清洗...')
+        df = df.dropna(subset=['封面链接'])
+        df = df[df['封面链接'].astype(str).str.strip() != '']
+        
+        total_rows = len(df)
+        if total_rows == 0:
+            update_task_status('cover', session_id, status='error', message='文件中没有有效数据')
+            return
+        
+        # 根据API密钥数量分割数据
+        num_agents = min(len(api_keys), 10)  # 最多10个Agent
+        chunk_size = max(1, total_rows // num_agents)
+        chunks = []
+        for i in range(0, total_rows, chunk_size):
+            chunk_end = min(i + chunk_size, total_rows)
+            chunks.append(df.iloc[i:chunk_end].copy())
+        
+        # 如果分块数超过Agent数量，合并最后两个块
+        if len(chunks) > num_agents:
+            last_chunk = chunks.pop()
+            chunks[-1] = pd.concat([chunks[-1], last_chunk], ignore_index=True)
+        
+        # 确保正好num_agents个块
+        while len(chunks) < num_agents:
+            chunks.append(pd.DataFrame(columns=df.columns))
+        
+        update_task_status('cover', session_id, total=total_rows, 
+                         message='数据准备完成，分为%d个子任务，开始处理 %d 条封面链接' % (len(chunks), total_rows))
+        
+        # 初始化子任务状态
+        task_status['cover'][session_id]['subtasks'] = {}
+        task_status['cover'][session_id]['completed_subtasks'] = 0
+        
+        # 创建线程池执行子任务
+        with ThreadPoolExecutor(max_workers=num_agents) as executor:
+            # 提交所有子任务
+            future_to_chunk = {}
+            for i, chunk in enumerate(chunks):
+                if len(chunk) > 0:
+                    # 使用对应的API密钥
+                    api_key = api_keys[i] if i < len(api_keys) else api_keys[0]
+                    future = executor.submit(process_cover_chunk, chunk, api_key, session_id, i)
+                    future_to_chunk[future] = i
+                    # 初始化子任务状态
+                    task_status['cover'][session_id]['subtasks'][i] = {
+                        'status': 'processing',
+                        'progress': 0,
+                        'total': len(chunk),
+                        'processed': 0
+                    }
+            
+            # 收集结果
+            completed_chunks = []
+            total_futures = len(future_to_chunk)
+            
+            for i, future in enumerate(as_completed(future_to_chunk)):
+                chunk_index = future_to_chunk[future]
+                try:
+                    result_chunk = future.result()
+                    completed_chunks.append(result_chunk)
+                    
+                    # 更新子任务完成状态
+                    task_status['cover'][session_id]['completed_subtasks'] += 1
+                    completed_count = task_status['cover'][session_id]['completed_subtasks']
+                    
+                    # 更新总体进度
+                    progress = int((completed_count / total_futures) * 100)
+                    update_task_status('cover', session_id, progress=progress, 
+                                     message='子任务 %d/%d 已完成，总体进度 %d%%' % (completed_count, total_futures, progress))
+                    
+                    # 更新子任务状态为完成
+                    task_status['cover'][session_id]['subtasks'][chunk_index]['status'] = 'completed'
+                    task_status['cover'][session_id]['subtasks'][chunk_index]['progress'] = 100
+                    
+                except Exception as e:
+                    logger.error("封面子任务 %d 处理失败: %s" % (chunk_index, str(e)))
+                    update_task_status('cover', session_id, 
+                                     message='子任务 %d 处理异常: %s' % (chunk_index, str(e)), 
+                                     status='warning')
+                    # 标记子任务失败
+                    task_status['cover'][session_id]['subtasks'][chunk_index]['status'] = 'error'
+        
+        # 合并所有子任务的结果
+        if completed_chunks:
+            final_df = pd.concat(completed_chunks, ignore_index=True)
+            
+            # 保存最终结果
+            result_path = get_result_path('cover', session_id)
+            final_df.to_excel(result_path, index=False)
+            
+            # 更新任务状态
+            update_task_status('cover', session_id, status='done', progress=100, 
+                             message='多Agent封面审核完成，请点击完成按钮')
+            
+            # 添加到历史记录
+            add_to_history('cover', session_id, os.path.basename(filename), total_rows, 
+                          task_status['cover'][session_id]['statistics'])
+        else:
+            update_task_status('cover', session_id, status='error', 
+                             message='所有子任务处理失败')
+        
+    except Exception as e:
+        logger.error("封面处理错误: %s" % str(e))
+        update_task_status('cover', session_id, status='error', message='处理出错: %s' % str(e))
+        # 即使出错也尝试记录历史
+        try:
+            add_to_history('cover', session_id, os.path.basename(filename), 
+                          total_rows if 'total_rows' in locals() else 0, 
+                          task_status['cover'][session_id]['statistics'])
+        except:
+            pass
+
+def process_cover_chunk(chunk_df, api_key, session_id, chunk_index):
+    """处理单个封面数据块"""
+    try:
+        # 复制数据块避免修改原数据
+        df = chunk_df.copy()
+        
+        # 初始化结果列
+        df['审核结果'] = ''
+        df['违规标签'] = ''
+        df['审核时间'] = ''
+        df['处理批次'] = chunk_index + 1  # 标记处理批次
+        
+        # 更新子任务状态
+        task_status['cover'][session_id]['subtasks'][chunk_index] = {
+            'status': 'processing',
+            'progress': 0,
+            'total': len(df),
+            'processed': 0
+        }
+        
+        # 逐行处理数据
+        for index, row in df.iterrows():
+            try:
+                # 检查主任务状态
+                if (session_id in task_status['cover'] and 
+                    task_status['cover'][session_id]['status'] != 'processing'):
+                    break
+                
+                # 处理封面链接
+                cover_url = str(row['封面链接']).strip()
+                result, tags = process_cover_batch(cover_url, api_key, index, session_id)
+                
+                # 特殊处理：如果标签为"/"，则结果应为"正常"
+                if len(tags) == 0 or (len(tags) == 1 and tags[0] == '/'):
+                    result = '正常'
+                    tags = []
+                
+                # 更新结果
+                df.at[index, '审核结果'] = result
+                df.at[index, '违规标签'] = ', '.join(tags) if tags else '/'
+                df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 更新统计
+                update_statistics('cover', session_id, result, tags if tags else [])
+                
+                # 更新子任务进度
+                processed_count = index + 1
+                chunk_progress = int((processed_count / len(df)) * 100)
+                task_status['cover'][session_id]['subtasks'][chunk_index]['processed'] = processed_count
+                task_status['cover'][session_id]['subtasks'][chunk_index]['progress'] = chunk_progress
+                
+                # 添加间隔，避免请求过快
+                time.sleep(1)  # 封面审核需要更长的间隔
+                
+            except Exception as e:
+                logger.error("封面处理错误(批次%d, 行%d): %s" % (chunk_index, index, str(e)))
+                
+                # 更新结果为处理失败
+                df.at[index, '审核结果'] = '处理失败'
+                df.at[index, '违规标签'] = '/'
+                df.at[index, '审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 更新统计
+                update_statistics('cover', session_id, '处理失败', [])
+                
+                # 更新子任务进度
+                processed_count = index + 1
+                task_status['cover'][session_id]['subtasks'][chunk_index]['processed'] = processed_count
+                
+                continue
+        
+        # 标记子任务完成
+        task_status['cover'][session_id]['subtasks'][chunk_index]['status'] = 'completed'
+        task_status['cover'][session_id]['subtasks'][chunk_index]['progress'] = 100
+        
+        return df
+        
+    except Exception as e:
+        logger.error("封面数据块处理错误(批次%d): %s" % (chunk_index, str(e)))
+        # 返回原始数据块，标记为处理失败
+        df = chunk_df.copy()
+        df['审核结果'] = '处理失败'
+        df['违规标签'] = '/'
+        df['审核时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        df['处理批次'] = chunk_index + 1
+        # 标记子任务失败
+        task_status['cover'][session_id]['subtasks'][chunk_index]['status'] = 'error'
+        return df
+
+def process_cover_batch(cover_url, api_key, index, session_id):
+    """处理单条封面链接 - 多Agent适配版本"""
+    # 应用速率限制
+    update_task_status('cover', session_id, message='项目 #%d 应用速率限制...' % (index+1))
+    time.sleep(1)  # 确保请求间隔至少1秒
+    
+    # 最大重试次数
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        try:
+            # 构建请求数据 - 修改为新的API请求格式
+            data = {
+                "query": "请审核以下封面图片是否违规，并给出审核结果和违规标签：",
+                "inputs": {},
+                "response_mode": "blocking",
+                "user": "audit_system",
+                "upload_mediums": [
+                    {
+                        "url": cover_url,
+                        "type": "image"
+                    }
+                ]
+            }
+            
+            # 发送请求
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer %s" % api_key  # 保持Bearer和密钥之间的空格
+            }
+            
+            # 记录请求时间
+            start_time = time.time()
+            
+            # 发送请求
+            update_task_status('cover', session_id, message='项目 #%d 发送请求 (尝试 %d/%d)...' % (index+1, retry_count+1, max_retries))
+            response = requests.post(API_URL, headers=headers, json=data, timeout=(10, 3000))
+            
+            # 计算请求耗时
+            elapsed_time = time.time() - start_time
+            
+            # 记录响应状态
+            if response.status_code != 200:
+                logger.error("封面审核响应错误: %s" % response.text)
+                
+                # 特殊处理501错误（对话ID不存在）
+                if response.status_code == 501 and "conversation_id" in response.text:
+                    # 重新尝试，不使用conversation_id
+                    retry_count += 1
+                    logger.info("封面审核重试 %d/%d" % (retry_count, max_retries))
+                    time.sleep(2)  # 等待2秒后重试
+                    continue
+                
+                response.raise_for_status()
+            
+            # 解析响应
+            result_data = response.json()
+            assistant_message = result_data.get('answer', '')
+            
+            # 解析审核结果
+            result, tags = parse_audit_result(assistant_message)
+            
+            # 记录解析结果
+            logger.info("封面审核结果: %s, 标签: %s, 耗时: %.2f秒" % (result, tags, elapsed_time))
+            return result, tags
+            
+        except requests.exceptions.Timeout as timeout_err:
+            retry_count += 1
+            timeout_type = "连接" if "connect" in str(timeout_err).lower() else "读取"
+            logger.error("API请求超时 (%s) (尝试 %d/%d): %s" % (timeout_type, retry_count, max_retries, str(timeout_err)))
+            
+            if retry_count >= max_retries:
+                logger.critical("API请求达到最大超时重试次数")
+                return '处理失败', []
+            
+            sleep_time = 2 ** retry_count
+            logger.info("将在 %d 秒后重试..." % sleep_time)
+            time.sleep(sleep_time)
+            
+        except requests.exceptions.RequestException as req_err:
+            retry_count += 1
+            logger.error("网络请求异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(req_err)))
+            
+            if retry_count >= max_retries:
+                return '处理失败', []
+            
+            time.sleep(2)
+            
+        except Exception as e:
+            retry_count += 1
+            logger.error("未处理的异常 (尝试 %d/%d): %s" % (retry_count, max_retries, str(e)))
+            
+            if retry_count >= max_retries:
+                return '处理失败', []
+            
+            time.sleep(2)
+    
+    return '处理失败', []
+
 # ================ 其他巡检功能保持不变 ================
 
-def process_cover_file(filename, api_keys, session_id):
+def process_cover_file_single(filename, api_keys, session_id):
     """处理封面文件 - 修复版，使用api_keys列表"""
     try:
         # 确保api_keys不为空
